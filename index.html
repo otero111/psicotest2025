@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: Fundamentos de la Psicología</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Reset y Estilos Base --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Tema Oscuro: Colores base */
+        :root {
+            --bg-main: #121212; /* Fondo principal casi negro */
+            --bg-container: #1e1e1e; /* Fondo contenedor ligeramente más claro */
+            --bg-card: #2a2a2a; /* Fondo de tarjetas */
+            --text-primary: #e0e0e0; /* Texto principal claro */
+            --text-secondary: #a0a0a0; /* Texto secundario gris claro */
+            --text-heading: #ffffff; /* Texto de encabezados blanco */
+            --accent-blue: #5fa8d3; /* Azul acento más brillante para dark mode */
+            --accent-blue-dark: #1b4965; /* Azul oscuro para fondos/bordes */
+            --border-color: #3a3a3a; /* Borde general */
+            --button-hover-bg: #333333; /* Fondo al pasar el ratón por botones generales */
+            --button-active-bg: #444444; /* Fondo al hacer clic en botones generales */
+            --selection-hover-bg: #383838; /* Fondo al pasar el ratón por opciones de selección */
+            --correct-answer: #6a9955; /* Verde para respuestas correctas */
+            --incorrect-answer: #cc6666; /* Rojo para respuestas incorrectas */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: var(--bg-container);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            position: relative; /* Para posicionar el botón de volver */
+        }
+
+        h1, h2 {
+            color: var(--text-heading);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        p {
+            line-height: 1.6;
+        }
+
+        .screen {
+            display: none; /* Oculto por defecto, JS lo muestra */
+        }
+
+        /* --- Pantalla de Selección de Módulo --- */
+        .module-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .module-button {
+            background-color: var(--bg-card);
+            color: var(--accent-blue);
+            border: 1px solid var(--accent-blue-dark);
+            border-radius: 8px;
+            padding: 25px 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .module-button:hover {
+            background-color: var(--accent-blue-dark);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .module-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Pantalla de Quiz --- */
+        #quiz-screen .question-container {
+            background-color: var(--bg-card);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        #quiz-screen .question-text {
+            font-size: 1.3em;
+            color: var(--text-heading);
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option-button {
+            background-color: var(--bg-container);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px 20px;
+            text-align: left;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: normal; /* Permite que el texto se ajuste */
+            word-wrap: break-word; /* Rompe palabras largas si es necesario */
+        }
+
+        .option-button:not(.selected):hover {
+            background-color: var(--selection-hover-bg);
+            border-color: var(--accent-blue-dark);
+        }
+
+        .option-button.selected {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(95, 168, 211, 0.5); /* Sombra para opción seleccionada */
+        }
+
+        .option-button.correct {
+            background-color: var(--correct-answer);
+            color: white;
+            border-color: var(--correct-answer);
+        }
+
+        .option-button.incorrect {
+            background-color: var(--incorrect-answer);
+            color: white;
+            border-color: var(--incorrect-answer);
+        }
+
+        .quiz-navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 15px; /* Espacio entre botones */
+        }
+
+        .quiz-navigation-buttons button,
+        .result-buttons button,
+        #read-button,
+        #back-to-selection-button {
+            flex: 1; /* Para que los botones ocupen espacio equitativamente */
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            min-width: fit-content; /* Asegura que no se encoja demasiado */
+        }
+
+        #next-button, #restart-quiz-button {
+            background-color: var(--accent-blue);
+            color: white;
+        }
+
+        #next-button:hover, #restart-quiz-button:hover {
+            background-color: #7abfe6; /* Un azul más claro para hover */
+        }
+
+        #next-button:active, #restart-quiz-button:active {
+            background-color: #4a91bb; /* Un azul más oscuro para active */
+            transform: translateY(1px);
+        }
+
+        #show-answer-button, #restart-all-button, #back-to-selection-button, #read-button, #back-to-fundamentos-selection-button {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        #show-answer-button:hover, #restart-all-button:hover, #back-to-selection-button:hover, #read-button:hover, #back-to-fundamentos-selection-button:hover {
+            background-color: var(--button-hover-bg);
+        }
+
+        #show-answer-button:active, #restart-all-button:active, #back-to-selection-button:active, #read-button:active, #back-to-fundamentos-selection-button:active {
+            background-color: var(--button-active-bg);
+            transform: translateY(1px);
+        }
+
+        .explanation-container {
+            background-color: var(--accent-blue-dark); /* Un azul más oscuro para la explicación */
+            border-left: 5px solid var(--accent-blue);
+            border-radius: 0 0 10px 10px; /* Bordes redondeados solo abajo */
+            padding: 20px;
+            margin-top: 20px;
+            color: var(--text-primary);
+            font-size: 0.95em;
+            line-height: 1.5;
+            display: none; /* Oculto por defecto */
+        }
+
+        .explanation-container h3 {
+            color: var(--text-heading);
+            margin-bottom: 10px;
+        }
+
+        /* --- Pantalla de Resultados --- */
+        #results-screen .results-summary {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #results-screen .score {
+            font-size: 2.5em;
+            color: var(--accent-blue);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        #results-screen .score-text {
+            font-size: 1.2em;
+            color: var(--text-secondary);
+        }
+
+        .result-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Botón de volver a la selección de módulo */
+        #back-to-selection-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            z-index: 10; /* Asegura que esté por encima de otros elementos */
+            display: none; /* Oculto por defecto, solo visible en el quiz */
+        }
+
+        #read-button {
+             margin-top: 15px; /* Espacio superior para el botón de lectura */
+        }
+
+        /* Estilo para el contador de preguntas */
+        .question-counter {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .module-button {
+                font-size: 1em;
+                padding: 20px 15px;
+            }
+
+            .quiz-navigation-buttons {
+                flex-direction: column;
+            }
+
+            .quiz-navigation-buttons button,
+            .result-buttons button,
+            #read-button,
+            #back-to-selection-button,
+            #back-to-fundamentos-selection-button {
+                width: 100%;
+                flex: none; /* Deshabilita flex-1 en pantallas pequeñas */
+            }
+
+            #back-to-selection-button {
+                position: static; /* Vuelve a posición normal en móviles */
+                margin-bottom: 20px;
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Botón para volver a la selección de módulo (visible solo en quiz) -->
+        <button id="back-to-selection-button" class="option-button">← Elegir Módulo</button>
+
+        <!-- Pantalla de Selección de Módulo Principal -->
+        <div id="module-selection-screen" class="screen">
+            <h1>Bienvenido al Quiz de Psicología</h1>
+            <p>Selecciona una materia para empezar a practicar:</p>
+            <div class="module-selection-grid">
+                <button class="module-button" data-module="fundamentos_main">Fundamentos de la Psicología</button>
+                <button class="module-button" data-module="historia_main">Historia de la Psicología</button>
+                <button class="module-button" data-module="neurobiologia">Neurobiología</button>
+                <button class="module-button" data-module="articulacion">Articulación de Saberes</button>
+                <button class="module-button" data-module="epistemologia">Epistemología</button>
+                <!-- Agrega más módulos según sea necesario -->
+            </div>
+        </div>
+
+        <!-- Pantalla de Selección de Módulos de Fundamentos -->
+        <div id="fundamentos-modules-screen" class="screen">
+            <h1>Fundamentos de la Psicología</h1>
+            <p>Selecciona un módulo para empezar a practicar:</p>
+            <div class="module-selection-grid">
+                <button class="module-button" data-module="fundamentos_modulo1">Módulo 1</button>
+                <button class="module-button" data-module="fundamentos_modulo2">Módulo 2</button>
+                <button class="module-button" data-module="fundamentos_modulo3">Módulo 3</button>
+                <button class="module-button" data-module="fundamentos_modulo4">Módulo 4</button>
+            </div>
+            <button id="back-to-main-selection-button" class="option-button" style="margin-top: 20px;">← Volver a Materias</button>
+        </div>
+
+        <!-- Pantalla de Selección de Módulos de Historia -->
+        <div id="historia-modules-screen" class="screen">
+            <h1>Historia de la Psicología</h1>
+            <p>Selecciona un documento para empezar a practicar:</p>
+            <div class="module-selection-grid">
+                <button class="module-button" data-module="historia_doc1">Documento 1</button>
+                <button class="module-button" data-module="historia_doc2">Documento 2</button>
+                <button class="module-button" data-module="historia_doc3">Documento 3</button>
+                <button class="module-button" data-module="historia_doc4">Documento 4</button>
+                <button class="module-button" data-module="historia_doc5">Documento 5</button>
+                <button class="module-button" data-module="historia_doc6">Documento 6</button>
+                <button class="module-button" data-module="historia_doc7">Documento 7</button>
+                <button class="module-button" data-module="historia_doc8">Documento 8</button>
+                <button class="module-button" data-module="historia_doc9">Documento 9</button>
+                <button class="module-button" data-module="historia_doc10">Documento 10</button>
+            </div>
+            <button id="back-to-main-selection-button-historia" class="option-button" style="margin-top: 20px;">← Volver a Materias</button>
+        </div>
+
+
+        <!-- Pantalla de Quiz -->
+        <div id="quiz-screen" class="screen">
+            <h2 id="quiz-title"></h2>
+            <p id="question-counter" class="question-counter"></p>
+            <div class="question-container">
+                <p id="question-text" class="question-text"></p>
+                <div id="options-container" class="options-grid">
+                    <!-- Opciones se cargarán aquí dinámicamente -->
+                </div>
+                <div id="explanation-container" class="explanation-container">
+                    <h3>Justificación:</h3>
+                    <p id="explanation-text"></p>
+                </div>
+            </div>
+            <div class="quiz-navigation-buttons">
+                <button id="show-answer-button">Mostrar Respuesta</button>
+                <button id="next-button">Siguiente Pregunta</button>
+            </div>
+            <button id="read-button">Leer Pregunta y Opciones</button>
+        </div>
+
+        <!-- Pantalla de Resultados -->
+        <div id="results-screen" class="screen">
+            <h1>Resultados del Quiz</h1>
+            <div class="results-summary">
+                <p class="score" id="final-score"></p>
+                <p class="score-text">¡Has completado el quiz!</p>
+            </div>
+            <div class="result-buttons">
+                <button id="restart-quiz-button">Estudiar Mismo Módulo</button>
+                <button id="restart-all-button">Elegir Otro Módulo</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const moduleSelectionScreen = document.getElementById('module-selection-screen');
+        const fundamentosModulesScreen = document.getElementById('fundamentos-modules-screen');
+        const historiaModulesScreen = document.getElementById('historia-modules-screen'); // Nueva pantalla para Historia
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+
+        const quizTitle = document.getElementById('quiz-title');
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const explanationContainer = document.getElementById('explanation-container');
+        const explanationText = document.getElementById('explanation-text');
+        const showAnswerButton = document.getElementById('show-answer-button');
+        const nextButton = document.getElementById('next-button');
+        const readButton = document.getElementById('read-button');
+        const backToSelectionButton = document.getElementById('back-to-selection-button');
+        const backToMainSelectionButton = document.getElementById('back-to-main-selection-button');
+        const backToMainSelectionButtonHistoria = document.getElementById('back-to-main-selection-button-historia');
+
+
+        const finalScore = document.getElementById('final-score');
+        const restartQuizButton = document.getElementById('restart-quiz-button');
+        const restartAllButton = document.getElementById('restart-all-button');
+
+        let currentQuiz = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+        let selectedModule = null; // Para recordar qué módulo se seleccionó (ej: 'fundamentos_modulo1', 'historia_doc4')
+        let currentActiveScreen = 'module-selection-screen'; // Para manejar la navegación de vuelta
+
+        // Todas las preguntas de a.txt y aa.txt (Fundamentos)
+        const all_fundamentos_questions = [
+            // MÓDULO 1: Definiciones y conceptos introductorios (de a.txt y aa.txt)
+            {
+                module: 1,
+                question: "¿Según el texto de Arana y colaboradores (2016) se destaca en la definición de Psicología que:",
+                options: [
+                    "Hay una dificultad en definir la psicología y es por el uso vulgar del término y por la diversidad de acepciones científicas de la misma.",
+                    "La psicología aplicada es menos confusa que la psicología básica.",
+                    "Se podría definir la psicología basándose en el ejercicio de la profesión.",
+                    "A través del recorrido histórico, se abandona la distinción entre psicología básica y aplicada."
+                ],
+                answer: "Hay una dificultad en definir la psicología y es por el uso vulgar del término y por la diversidad de acepciones científicas de la misma.",
+                explanation: "Arana et al. señalan que la polisemia del término 'psicología' tanto en el lenguaje común como en el académico es una de las principales dificultades para llegar a una definición unificada."
+            },
+            {
+                module: 1,
+                question: "En el ámbito de la disciplina psicológica:",
+                options: [
+                    "existe un sólo cuerpo teórico unificado de varias corrientes",
+                    "se reconoce sólo un cuerpo coherente y sistematizado de conocimientos sobre la mente",
+                    "hay un acuerdo tácito sobre el objeto de estudio",
+                    "coexisten numerosas \"corrientes\", \"escuelas\" y \"teorías\""
+                ],
+                answer: "coexisten numerosas \"corrientes\", \"escuelas\" y \"teorías\"",
+                explanation: "Autores como Arana y Vezzetti concuerdan en que la psicología se caracteriza por su pluralidad y diversidad, sin un único cuerpo teórico, objeto o método unificado."
+            },
+            {
+                module: 1,
+                question: "En relación a la Psicología, J. Bleger postuló:",
+                options: [
+                    "que es una ciencia estática",
+                    "que estudia la Psicología desde una mirada interdisciplinaria",
+                    "que comparte con otras ciencias el objeto de estudio",
+                    "que tiene varios objetos de estudio"
+                ],
+                answer: "que comparte con otras ciencias el objeto de estudio",
+                explanation: "Bleger sostiene que la psicología comparte su objeto, el ser humano, con otras ciencias, pero se distingue por su enfoque particular en la organización de la conducta y la personalidad."
+            },
+            {
+                module: 1,
+                question: "Bleger considera que la psicología tiene como objeto de estudio:",
+                options: [
+                    "la conducta evidente de las personas",
+                    "al hombre solamente en su contexto familiar.",
+                    "la descripción y funcionamiento del aparato psíquico (incluye al inconsciente)",
+                    "a los seres humanos reales y concretos"
+                ],
+                answer: "a los seres humanos reales y concretos",
+                explanation: "Bleger enfatiza que la psicología no debe estudiar entidades abstractas (mente, alma), sino a los seres humanos en su existencia concreta y en su contexto."
+            },
+            {
+                module: 1,
+                question: "Bleger plantea que:",
+                options: [
+                    "Se debe plantear la mente o conciencia en el estudio de la psicología",
+                    "estudia los seres humanos desde un enfoque particular que responde a la necesidad de atender un determinado plano de organización como seres vivos.",
+                    "hay fenómenos parapsicológicos que deben tenerse en cuenta",
+                    "la psicología comparte su objeto de estudio con otras ciencias"
+                ],
+                answer: "estudia los seres humanos desde un enfoque particular que responde a la necesidad de atender un determinado plano de organización como seres vivos.",
+                explanation: "Bleger argumenta que, aunque comparte el objeto 'hombre' con otras ciencias, la psicología tiene un enfoque específico en un plano de integración particular: la conducta."
+            },
+            {
+                module: 1,
+                question: "Con respecto al mito de \"el hombre natural\" José Bleger (1983) postula que:",
+                options: [
+                    "El ser humano se concibe como un ser aislado por naturaleza",
+                    "La condición del ser humano es la de ser social",
+                    "La condición del ser humano está determinada siempre por una tradición religiosa",
+                    "El ser humano tiene cualidades que se perturban por influencia de la organización social"
+                ],
+                answer: "El ser humano tiene cualidades que se perturban por influencia de la organización social",
+                explanation: "El mito del hombre natural, según Bleger, postula una esencia originaria y buena del ser humano que se corrompe o distorsiona por la influencia de la civilización."
+            },
+            {
+                module: 1,
+                question: "Las áreas de la conducta para Bleger son:",
+                options: [
+                    "La voluntad, el pensamiento y la memoria",
+                    "La mente, los reflejos y la acción.",
+                    "La mente, el cuerpo y el mundo externo.",
+                    "Lo inconsciente, lo consciente y lo preconsciente."
+                ],
+                answer: "La mente, el cuerpo y el mundo externo.",
+                explanation: "Bleger representa la conducta en tres áreas concéntricas: 1) la mente (fenómenos simbólicos), 2) el cuerpo (fenómenos concretos corporales) y 3) el mundo externo (actuación)."
+            },
+            {
+                module: 1,
+                question: "Bleger postula la conducta como fenómeno central de la psicología e implica que:",
+                options: [
+                    "Se puede comprender independientemente del contexto.",
+                    "Es funcional con la finalidad de resolver tensiones.",
+                    "No debe generar conflicto o ambivalencia en los sujetos.",
+                    "Se estudia como un momento estático de un sujeto."
+                ],
+                answer: "Es funcional con la finalidad de resolver tensiones.",
+                explanation: "Siguiendo a Mowrer y Kluckhohn, Bleger afirma que toda conducta es funcional, es decir, tiene el propósito de resolver las tensiones que amenazan la unidad y el equilibrio del organismo."
+            },
+            {
+                module: 1,
+                question: "Arana y colaboradores (2016) consideran que la psicología científica usa como herramientas:",
+                options: [
+                    "Las entrevistas abiertas de modo de lograr conocer a los sujetos en \"su medio\"",
+                    "La formulación de hipótesis y la contrastación con criterios aceptados del campo de las ciencias sociales.",
+                    "El método hipotético-deductivo acompañado de leyes del Comportamiento.",
+                    "La observación, la correlación y la investigación experimental."
+                ],
+                answer: "La observación, la correlación y la investigación experimental.",
+                explanation: "Los autores señalan que para alcanzar un conocimiento sistemático y romper con la subjetividad, la psicología científica se apoya en estas herramientas metodológicas."
+            },
+            {
+                module: 1,
+                question: "Según Vezzetti (2007) en el siglo XIX se reconocen 3 tradiciones:",
+                options: [
+                    "Psicofísica, Psicología experimental y Evolucionista",
+                    "Psicofísica, Evolucionista y Psicopatología",
+                    "Psicología Comparada, Evolutiva e Humanista",
+                    "Psicopatología, Psicología clínica, y psicoterapias"
+                ],
+                answer: "Psicofísica, Evolucionista y Psicopatología",
+                explanation: "Vezzetti organiza la diversidad de los comienzos de la psicología en estas tres grandes tradiciones que sentaron las bases para diferentes desarrollos posteriores."
+            },
+            {
+                module: 1,
+                question: "Para Vezzetti (2007) el campo psicológico se caracteriza por:",
+                options: [
+                    "Un campo homogéneo con un único objeto de estudio.",
+                    "Una pluralidad de objetos de estudio.",
+                    "El nacimiento como una práctica de la psicología básica.",
+                    "Todas son correctas."
+                ],
+                answer: "Una pluralidad de objetos de estudio.",
+                explanation: "Vezzetti enfatiza la heterogeneidad y la falta de unificación del campo psicológico, que se extiende entre la filosofía, la biología y las ciencias sociales."
+            },
+            {
+                module: 1,
+                question: "Para Georges Canguilhem, al preguntarse qué es la psicología responde que:",
+                options: [
+                    "Que su origen se encuentra en la llamada psicología moderna.",
+                    "Busca la independencia de la psicología de los sistemas filosóficos.",
+                    "Se debe buscar las raíces solo en la psicología experimental.",
+                    "Implica la obligación de esbozar una historia de la psicología en relación con la historia de la filosofía y de la ciencia."
+                ],
+                answer: "Implica la obligación de esbozar una historia de la psicología en relación con la historia de la filosofía y de la ciencia.",
+                explanation: "Canguilhem sostiene que no se puede definir la psicología sin entender su historia y sus complejas relaciones con otras disciplinas que le dieron origen y sentido."
+            },
+            {
+                module: 1,
+                question: "Para Arana con respecto a la psicología:",
+                options: [
+                    "Sostiene cómo válida únicamente la psicología aplicada.",
+                    "Se puede diferenciar la psicología aplicada y la psicología básica.",
+                    "Sostiene una diversidad de escuelas en psicologías, de objetos de estudio y un método único",
+                    "Plantea un modelo de psicología unificada"
+                ],
+                answer: "Se puede diferenciar la psicología aplicada y la psicología básica.",
+                explanation: "Arana et al. explican que en el ámbito académico es común esta distinción, donde la básica se enfoca en la investigación y la aplicada en la solución de problemas, aunque los límites son difusos."
+            },
+            {
+                module: 1,
+                question: "Bleger (1977) establece como unidad de estudio de la psicología a la conducta y toma las proposiciones de la teoría de la dinámica de la personalidad de Mowrer y Kluckhohn y plantean que:",
+                options: [
+                    "La conducta no implica un conflicto, sino que reacciona ante estímulos",
+                    "La conducta debe ser estudiada en situaciones experimentales",
+                    "La conducta debe dejar de lado el contexto para ser estudiada",
+                    "La conducta es funcional, tiende a resolver tensiones"
+                ],
+                answer: "La conducta es funcional, tiende a resolver tensiones",
+                explanation: "Este es uno de los cuatro postulados que Bleger adopta, indicando que la conducta siempre tiene una finalidad, que es la de mantener el equilibrio del organismo."
+            },
+            {
+                module: 1,
+                question: "¿Cuál de las siguientes expresiones pertenece a José Bleger (1977)?",
+                options: [
+                    "Se estudia la conducta en calidad de \"cosa\", en forma estática.",
+                    "En la historia de la psicología, en todos los campos psicológicos se ha estado estudiando únicamente la mente como objeto de estudio.",
+                    "El estudio de la conducta se hace en función de la personalidad y del inseparable contexto social, del cual el ser humano es integrante",
+                    "La psicología es exclusivamente la ciencia de los fenómenos mentales."
+                ],
+                answer: "El estudio de la conducta se hace en función de la personalidad y del inseparable contexto social, del cual el ser humano es integrante",
+                explanation: "Esta afirmación resume la perspectiva de Bleger, que integra al individuo en su contexto y ve la conducta como una manifestación de la personalidad en situación."
+            },
+            {
+                module: 1,
+                question: "El mito del \"hombre aislado\" según Bleger, sostiene que:",
+                options: [
+                    "El ser humano es originariamente un ser social que se corrompe.",
+                    "El ser humano es originariamente un ser no social que gradualmente se socializa.",
+                    "La sociedad es un producto de la naturaleza humana.",
+                    "La psicología debe estudiar al individuo sin considerar su contexto."
+                ],
+                answer: "El ser humano es originariamente un ser no social que gradualmente se socializa.",
+                explanation: "Bleger critica este mito, que supone que el ser humano es un ser aislado en su origen y que la sociedad es un agregado posterior. Para él, el ser humano es constitutivamente social."
+            },
+            {
+                module: 1,
+                question: "La diferencia entre psicología básica y psicología aplicada radica en que:",
+                options: [
+                    "La básica es teórica y la aplicada es exclusivamente clínica.",
+                    "La básica genera conocimiento y la aplicada busca solucionar problemas prácticos.",
+                    "La básica es científica y la aplicada no lo es.",
+                    "La básica se estudia en la universidad y la aplicada en institutos terciarios."
+                ],
+                answer: "La básica genera conocimiento y la aplicada busca solucionar problemas prácticos.",
+                explanation: "La psicología básica se enfoca en la investigación de procesos psicológicos fundamentales (memoria, aprendizaje), mientras que la aplicada utiliza esos conocimientos para intervenir en ámbitos concretos (educación, trabajo, clínica)."
+            },
+            {
+                module: 1,
+                question: "Cuando Canguilhem define la psicología como \"una filosofía sin rigor, un eclecticismo sin principios, y un conjunto de técnicas sin justificación\", se refiere a:",
+                options: [
+                    "Una crítica a la psicología como ciencia unificada.",
+                    "Una descripción de la psicología de la vida, que incluye el sentido de la enfermedad.",
+                    "Una crítica a los intentos de la psicología por imitar a las ciencias naturales sin una reflexión epistemológica propia.",
+                    "Un elogio a la capacidad de la psicología para adaptarse a diferentes campos."
+                ],
+                answer: "Una crítica a los intentos de la psicología por imitar a las ciencias naturales sin una reflexión epistemológica propia.",
+                explanation: "Canguilhem utiliza esta frase irónica para criticar una psicología que, en su afán de ser científica, adopta métodos y discursos sin un fundamento filosófico y epistemológico sólido, convirtiéndose en una mezcla incoherente."
+            },
+
+            // MÓDULO 2: Antecedentes filosóficos de la Psicología (de a.txt y aa.txt)
+            {
+                module: 2,
+                question: "En el período antiguo (siglo V a.C), Platón consideraba que el mundo estaba dividido en:",
+                options: [
+                    "Materia y espíritu",
+                    "Cuerpo y mente",
+                    "Razón y emoción",
+                    "Cielo y tierra"
+                ],
+                answer: "Materia y espíritu",
+                explanation: "Platón postuló un dualismo ontológico entre el mundo sensible (material, aparente) y el mundo de las Ideas (espiritual, verdadero), siendo este último la fuente del conocimiento real."
+            },
+            {
+                module: 2,
+                question: "Según Aristóteles:",
+                options: [
+                    "el verdadero ser, la auténtica existencia, se encuentra en lo individual y lo divino.",
+                    "las ideas son inseparables de la cosa misma",
+                    "la experiencia produce una idea distorsionada en el conocimiento",
+                    "las ideas previas, o como llama en su tratado de filosofía, \"ideas a priori\", tienen un papel central para conocer"
+                ],
+                answer: "las ideas son inseparables de la cosa misma",
+                explanation: "A diferencia de Platón, Aristóteles (hilemorfismo) sostenía que la forma (idea) y la materia son inseparables; no se puede concebir una sin la otra en el mundo real."
+            },
+            {
+                module: 2,
+                question: "Hipócrates es considerado uno de los médicos de la antigüedad que:",
+                options: [
+                    "Buscó causas naturales y no religiosas a las enfermedades.",
+                    "Realizaba trepanaciones para liberar malos espíritus.",
+                    "Basaba sus diagnósticos exclusivamente en la astrología.",
+                    "Creía que todas las enfermedades eran castigos divinos."
+                ],
+                answer: "Buscó causas naturales y no religiosas a las enfermedades.",
+                explanation: "Hipócrates marcó un punto de inflexión al separar la medicina de la religión y la magia, buscando explicaciones racionales y naturales para las enfermedades, como la teoría de los humores."
+            },
+            {
+                module: 2,
+                question: "En la Edad Media, la concepción de la enfermedad mental estaba fuertemente ligada a:",
+                options: [
+                    "El desequilibrio de los neurotransmisores",
+                    "Traumas infantiles",
+                    "La posesión demoníaca y el pecado",
+                    "Factores genéticos hereditarios"
+                ],
+                answer: "La posesión demoníaca y el pecado",
+                explanation: "Bajo el dominio teocéntrico, la locura y otras aflicciones mentales eran interpretadas como una manifestación del mal, un castigo divino o la acción de demonios, asimilando la enfermedad al pecado."
+            },
+            {
+                module: 2,
+                question: "Descartes plantea una distinción entre mente y cuerpo y destaca que:",
+                options: [
+                    "El alma racional se puede describir en términos humanistas.",
+                    "Los cambios en el mundo exterior no afectan las terminaciones nerviosas.",
+                    "El cuerpo tiene propiedades físicas como la extensión y el peso y la mente carece de tales propiedades.",
+                    "La naturaleza del cuerpo y la mente es la misma."
+                ],
+                answer: "El cuerpo tiene propiedades físicas como la extensión y el peso y la mente carece de tales propiedades.",
+                explanation: "El dualismo cartesiano se basa en que la res extensa (cuerpo) es material y se rige por leyes mecánicas, mientras que la res cogitans (mente) es inmaterial y no tiene propiedades físicas."
+            },
+            {
+                module: 2,
+                question: "Descartes consideraba que el universo material era:",
+                options: [
+                    "Un organismo vivo y espiritual.",
+                    "Una máquina.",
+                    "Un caos impredecible.",
+                    "Una creación divina en constante cambio."
+                ],
+                answer: "Una máquina.",
+                explanation: "La visión mecanicista de Descartes, extendida por Newton, fue fundamental en la Revolución Científica. Concebía el universo material, incluyendo el cuerpo, como un complejo mecanismo de relojería."
+            },
+            {
+                module: 2,
+                question: "Para Platón acerca del problema Alma-Cuerpo:",
+                options: [
+                    "El hombre es un compuesto de alma y cuerpo indivisible.",
+                    "El alma es material y mortal, y el cuerpo es inmortal e inmaterial.",
+                    "Están unidas de manera accidental como un conductor (alma) a su vehículo (cuerpo).",
+                    "Alma y cuerpo son parte de una unidad integral."
+                ],
+                answer: "Están unidas de manera accidental como un conductor (alma) a su vehículo (cuerpo).",
+                explanation: "Platón utiliza la alegoría del auriga para ilustrar su visión dualista, donde el alma (conductor) es una entidad inmortal y preexistente que está temporalmente 'atrapada' en un cuerpo mortal (vehículo)."
+            },
+            {
+                module: 2,
+                question: "La idea de salud y enfermedad en la Antigüedad:",
+                options: [
+                    "Se buscan las causas en los problemas internos del cuerpo.",
+                    "Los enfermos mentales eran considerados portadores de un saber universal.",
+                    "Hipócrates desarrolla la teoría de los humores.",
+                    "La salud mental adquiere relevancia con la idea de posesión demoníaca."
+                ],
+                answer: "Hipócrates desarrolla la teoría de los humores.",
+                explanation: "La teoría de los cuatro humores de Hipócrates fue un modelo dominante en la antigüedad para explicar tanto la salud (equilibrio) como la enfermedad (desequilibrio) a partir de causas naturales internas del cuerpo."
+            },
+            {
+                module: 2,
+                question: "Sobre la Escolástica:",
+                options: [
+                    "La escolástica proveniente de los griegos, permitió conceptualizar los conceptos de salud y enfermedad.",
+                    "En la Edad Media predominó la escolástica que deriva de los planteos de Sócrates sobre el cosmos.",
+                    "La escolástica propuesta por Santo Tomás utiliza la razón y la filosofía de Aristóteles, para comprender el contenido sobrenatural de la revelación cristiana.",
+                    "En el período medieval la ciencia se expresaba a través de la mayéutica."
+                ],
+                answer: "La escolástica propuesta por Santo Tomás utiliza la razón y la filosofía de Aristóteles, para comprender el contenido sobrenatural de la revelación cristiana.",
+                explanation: "La escolástica fue el método filosófico-teológico dominante en la Edad Media tardía, que buscaba reconciliar la fe con la razón, utilizando las herramientas lógicas de Aristóteles para defender y explicar la doctrina cristiana."
+            },
+            {
+                module: 2,
+                question: "En la Modernidad comienzan a practicarse las disecciones de los cuerpos, tal como se observa en la obra de Rembrandt:",
+                options: [
+                    "\"La ronda de noche\"",
+                    "\"El festín de Baltasar\"",
+                    "\"La lección de anatomía\"",
+                    "\"La novia judía\""
+                ],
+                answer: "\"La lección de anatomía\"",
+                explanation: "Esta famosa pintura de Rembrandt refleja el cambio de mentalidad de la Modernidad, donde el interés por la observación empírica y el conocimiento del cuerpo humano llevó a la práctica de disecciones, antes prohibidas."
+            },
+            {
+                module: 2,
+                question: "Según Capra, la concepción del \"mundo máquina\" es el resultado de:",
+                options: [
+                    "Del proceso que se produce por el progresivo desarrollo de la tecnología y las ciencias informáticas",
+                    "Los aportes de Hipócrates sobre los Humores.",
+                    "Los cambios producidos en la física y la astronomía, con las teorías de Copérnico, Galileo y Newton",
+                    "De las formulaciones hechas por la física cuántica."
+                ],
+                answer: "Los cambios producidos en la física y la astronomía, con las teorías de Copérnico, Galileo y Newton",
+                explanation: "Capra argumenta que la Revolución Científica, liderada por estas figuras, consolidó una visión mecanicista del universo, viéndolo como un sistema predecible y regido por leyes matemáticas."
+            },
+            {
+                module: 2,
+                question: "La separación entre Filosofía y Psicología se produce:",
+                options: [
+                    "Cuando en la Grecia Antigua surge el conocimiento universal.",
+                    "Cuando se produce la caída del imperio Romano de occidente.",
+                    "Con el surgimiento de la escolástica.",
+                    "Cuando surge el modelo científico de las ciencias naturales."
+                ],
+                answer: "Cuando surge el modelo científico de las ciencias naturales.",
+                explanation: "La psicología se independiza de la filosofía cuando adopta el método experimental de las ciencias naturales en el siglo XIX, buscando estudiar sus objetos (la conciencia, la conducta) de manera empírica y medible."
+            },
+            {
+                module: 2,
+                question: "La contribución de R. Descartes al surgimiento de la ciencia moderna se reflejó en:",
+                options: [
+                    "En el desarrollo del paradigma de la complejidad.",
+                    "La geometría analítica como resultado de la relación entre la matemática y la geometría.",
+                    "Los desarrollos teóricos tomados de los filósofos empiristas.",
+                    "Las ciencias sociales y del comportamiento."
+                ],
+                answer: "La geometría analítica como resultado de la relación entre la matemática y la geometría.",
+                explanation: "Descartes fue fundamental al crear la geometría analítica, uniendo álgebra y geometría, lo que proporcionó una herramienta matemática poderosa para describir el espacio y el movimiento, clave para la física de Newton."
+            },
+            {
+                module: 2,
+                question: "En la Antigüedad:",
+                options: [
+                    "Se buscaban explicaciones acerca del conocimiento, del origen del cosmos y sobre la importancia del alma humana.",
+                    "Se resuelve el dilema alma/cuerpo planteado por Platón y Aristóteles",
+                    "Aristóteles plantea que es fundamental la observación clínica de los enfermos",
+                    "Tuvieron gran desarrollo los estudios del sistema nervioso."
+                ],
+                answer: "Se buscaban explicaciones acerca del conocimiento, del origen del cosmos y sobre la importancia del alma humana.",
+                explanation: "El pensamiento filosófico griego abarcó estas grandes preguntas, pasando de un enfoque cosmológico (presocráticos) a uno antropológico y gnoseológico (Sócrates, Platón, Aristóteles)."
+            },
+            {
+                module: 2,
+                question: "La medicina durante el periodo del medioevo:",
+                options: [
+                    "Eliminó la creencia en la existencia de los demonios y su acción directa sobre los seres humanos como causa de las enfermedades.",
+                    "privilegiaba en el cuerpo humano los signos físicos de la enfermedad.",
+                    "La disección de cadáveres estaba prohibida por las creencias religiosas.",
+                    "Avanzó rápidamente en la investigación naturalista del Cuerpo humano y en las causas de las enfermedades."
+                ],
+                answer: "La disección de cadáveres estaba prohibida por las creencias religiosas.",
+                explanation: "La concepción sagrada del cuerpo humano en el cristianismo medieval impidió durante siglos la práctica de la disección, limitando el avance del conocimiento anatómico."
+            },
+            {
+                module: 2,
+                question: "La teoría de los cuatro humores de Hipócrates postulaba que la salud dependía del equilibrio entre:",
+                options: [
+                    "Sangre, flema, bilis amarilla y bilis negra.",
+                    "Aire, fuego, agua y tierra.",
+                    "Mente, cuerpo, alma y espíritu.",
+                    "Razón, emoción, voluntad y percepción."
+                ],
+                answer: "Sangre, flema, bilis amarilla y bilis negra.",
+                explanation: "Hipócrates propuso que el cuerpo contenía cuatro fluidos o humores, y que la salud (eucrasia) era el equilibrio entre ellos, mientras que la enfermedad (discrasia) era su desequilibrio. Fue un intento temprano de explicación naturalista."
+            },
+            {
+                module: 2,
+                question: "El método de Francis Bacon, el empirismo, se oponía al racionalismo cartesiano al proponer que el conocimiento debía basarse en:",
+                options: [
+                    "La deducción a partir de principios evidentes.",
+                    "La inducción a partir de la observación y la experiencia sistemática.",
+                    "La revelación divina y la interpretación de textos sagrados.",
+                    "La introspección y el análisis de la propia conciencia."
+                ],
+                answer: "La inducción a partir de la observación y la experiencia sistemática.",
+                explanation: "Mientras Descartes partía de la razón y la duda metódica (deducción), Bacon defendía el método inductivo: acumular observaciones particulares para luego derivar leyes generales. Es la base del empirismo."
+            },
+            {
+                module: 2,
+                question: "¿Qué significó la \"revolución copernicana\" para la cosmovisión moderna?",
+                options: [
+                    "Confirmó que la Tierra era el centro del universo (geocentrismo).",
+                    "Estableció que el Sol era el centro del sistema solar (heliocentrismo), desplazando al hombre del centro de la creación.",
+                    "Probó que el universo era infinito y eterno.",
+                    "Introdujo la idea de que los planetas se movían por fuerzas divinas."
+                ],
+                answer: "Estableció que el Sol era el centro del sistema solar (heliocentrismo), desplazando al hombre del centro de la creación.",
+                explanation: "El paso del geocentrismo al heliocentrismo no fue solo un cambio astronómico, sino una profunda herida narcisista para la humanidad, que perdió su lugar central y privilegiado en el cosmos, un paso clave hacia la mentalidad moderna."
+            },
+
+            // MÓDULO 3: La pluralidad psicológica a partir del siglo XIX (de a.txt y aa.txt)
+            {
+                module: 3,
+                question: "La psicología se consideró científica cuando:",
+                options: [
+                    "Define su objeto y método de estudio sólo basado en los aportes de la filosofía",
+                    "Desarrolla metodologías de investigación que tienen en cuenta el contexto sociohistórico",
+                    "Adoptó el método de investigación de las ciencias humanas",
+                    "Incorpora el método de investigación, que toma en cuenta los aportes del positivismo y los avances de las ciencias naturales"
+                ],
+                answer: "Incorpora el método de investigación, que toma en cuenta los aportes del positivismo y los avances de las ciencias naturales",
+                explanation: "El estatus de ciencia para la psicología se alcanzó en el siglo XIX al adoptar el método experimental, propio de las ciencias naturales y en línea con el positivismo dominante, para estudiar los fenómenos mentales en laboratorio."
+            },
+            {
+                module: 3,
+                question: "El método de la psicología experimental de Wundt era:",
+                options: [
+                    "Una técnica cualitativa que exploraba la conciencia y sus aspectos inconscientes de la personalidad.",
+                    "Una técnica de percepción interna controlada de los contenidos de la conciencia realizada bajo condiciones experimentales.",
+                    "El estudio de las conductas observables sin importar la conciencia.",
+                    "La asociación libre de ideas para acceder a contenidos reprimidos."
+                ],
+                answer: "Una técnica de percepción interna controlada de los contenidos de la conciencia realizada bajo condiciones experimentales.",
+                explanation: "Wundt denominó a su método 'introspección experimental' o 'percepción interna', que consistía en la auto-observación rigurosa y controlada de la experiencia consciente inmediata bajo condiciones de laboratorio."
+            },
+            {
+                module: 3,
+                question: "Para Wundt:",
+                options: [
+                    "La voluntad organiza los contenidos mentales en estructuras de nivel superior, de forma que las imágenes de la percepción se reorganizan en procesos superiores cognitivos",
+                    "Todas las opciones son correctas.",
+                    "La voluntad organiza los contenidos mentales inconscientes reprimidos que estructuran la conducta en procesos emocionales.",
+                    "Las conductas observables y reflejas determinan las conductas del sujeto experimentados."
+                ],
+                answer: "La voluntad organiza los contenidos mentales en estructuras de nivel superior, de forma que las imágenes de la percepción se reorganizan en procesos superiores cognitivos",
+                explanation: "Wundt llamó a su sistema 'voluntarismo' porque creía que la voluntad era una fuerza activa que organizaba los elementos básicos de la conciencia (sensaciones, sentimientos) en procesos mentales más complejos (apercepción)."
+            },
+            {
+                module: 3,
+                question: "El estructuralismo se desarrolló como escuela psicológica a partir de:",
+                options: [
+                    "La importancia que se le da a la intencionalidad de las conductas.",
+                    "Los aportes de la psicología cognitiva en Estados Unidos.",
+                    "La psicología experimental cuyo objeto de estudio es la conciencia.",
+                    "Una concepción psicológica que valoriza el concepto de inconsciente."
+                ],
+                answer: "La psicología experimental cuyo objeto de estudio es la conciencia.",
+                explanation: "El estructuralismo de Titchener fue una derivación directa de la psicología de Wundt, llevando a EE.UU. el objetivo de analizar la estructura de la conciencia a través de la introspección experimental."
+            },
+            {
+                module: 3,
+                question: "El funcionalismo que se desarrolla en EE.UU.:",
+                options: [
+                    "Está interesado en la morfología de la conciencia.",
+                    "Se interesó por la intención de la mente.",
+                    "Se ocupa de los procesos psíquicos conscientes e inconscientes.",
+                    "Se ocupó de los elementos simples de la conciencia."
+                ],
+                answer: "Se interesó por la intención de la mente.",
+                explanation: "El funcionalismo, influido por Darwin, se centró en la utilidad y el propósito ('para qué sirve') de los procesos mentales, es decir, su función adaptativa, en contraste con el estructuralismo que se centraba en el 'qué es'."
+            },
+            {
+                module: 3,
+                question: "El Funcionalismo norteamericano se sustenta en los siguientes referentes teóricos.",
+                options: [
+                    "Postula que los conceptos mentales derivan del pragmatismo y el asociacionismo evolucionista.",
+                    "Estudios sobre el comportamiento sexual de hombres y mujeres, fueron relevantes para su reconocimiento científico.",
+                    "Se basa en el estudio de las emociones y la expresión facial de las mismas.",
+                    "Erich Fromm (1900-1980) fue uno de los principales referentes e impulsores de esta teoría."
+                ],
+                answer: "Postula que los conceptos mentales derivan del pragmatismo y el asociacionismo evolucionista.",
+                explanation: "El funcionalismo se nutrió de la filosofía pragmática (la verdad de una idea reside en su utilidad) y de la teoría de la evolución de Darwin, que enfatiza la adaptación."
+            },
+            {
+                module: 3,
+                question: "La teoría de la evolución de las especies de Darwin tuvo influencia en:",
+                options: [
+                    "La formulación del conductismo y la idea de adaptación de conductas.",
+                    "Los trabajos de psicofisiología que dieron lugar a la psicología experimental de finales del siglo XIX.",
+                    "Los estudios del inconsciente y de antropología realizados por Freud.",
+                    "La psicología evolutiva del desarrollo cognitivo de Piaget."
+                ],
+                answer: "La formulación del conductismo y la idea de adaptación de conductas.",
+                explanation: "La idea de adaptación y continuidad entre especies fue fundamental para el funcionalismo y, posteriormente, para el conductismo, que estudió el aprendizaje como forma de adaptación al ambiente."
+            },
+            {
+                module: 3,
+                question: "Se consideran antecedentes de la psicología experimental:",
+                options: [
+                    "la descripción morfológica de la biología que se desarrolla en Alemania",
+                    "Las investigaciones sobre la Gestalt en Alemania",
+                    "Los aportes de la epistemología genética de Piaget",
+                    "La psicología que toma al sujeto como un ser holístico"
+                ],
+                answer: "la descripción morfológica de la biología que se desarrolla en Alemania",
+                explanation: "La cientifización de la psicología, según Carro, estuvo precedida por los avances en fisiología y neurología en Alemania, que aplicaron métodos experimentales al estudio de los sentidos y los impulsos nerviosos."
+            },
+            {
+                module: 3,
+                question: "La psicología en Latinoamérica en la primera mitad del siglo XX reconoce como hitos destacados:",
+                options: [
+                    "Los aportes sobre pedagogía y orientación vocacional realizados por Clemente Estable",
+                    "Todas son correctas.",
+                    "Las contribuciones de Ángel Garma con los primeros estudios sobre Psicoanálisis en Argentina.",
+                    "Horacio Piñero fundador de laboratorios de Psicología Experimental en Buenos Aires."
+                ],
+                answer: "Todas son correctas.",
+                explanation: "Estos tres hitos son ejemplos del desarrollo temprano de la psicología en Latinoamérica, mostrando un fuerte interés en la psicología aplicada (pedagogía, psicoanálisis) y la investigación experimental."
+            },
+            {
+                module: 3,
+                question: "El desarrollo de la psicología Latinoamericana se distingue por:",
+                options: [
+                    "Una psicología aplicada de utilidad y su relación con otras disciplinas.",
+                    "Una psicología positivista que busca cumplir con los ideales de objetividad científica.",
+                    "El desarrollo de una Psicología nacionalista y originaria de autores locales.",
+                    "Una aplicación directa de las teorías norteamericanas en América."
+                ],
+                answer: "Una psicología aplicada de utilidad y su relación con otras disciplinas.",
+                explanation: "Klappenbach y Pavesi señalan que una característica distintiva de la psicología en Latinoamérica fue su orientación pragmática, buscando resolver problemas concretos en áreas como la educación y la salud, y su estrecha relación con estas disciplinas."
+            },
+            {
+                module: 3,
+                question: "La psiquiatría dinámica:",
+                options: [
+                    "se toma como uno de los antecedentes del desarrollo de la Psicología Experimental",
+                    "es uno de los antecedentes del Humanismo",
+                    "realizó aportes conceptuales a la Teoría Gestáltica",
+                    "contribuyó al desarrollo de la idea del aparato psíquico freudiano"
+                ],
+                answer: "contribuyó al desarrollo de la idea del aparato psíquico freudiano",
+                explanation: "Ellenberger muestra cómo la psiquiatría dinámica, con su interés en las fuerzas y conflictos mentales (especialmente a través de la hipnosis y el estudio de la histeria), fue un antecedente directo del psicoanálisis."
+            },
+            {
+                module: 3,
+                question: "Se consideran antecedentes del psicoanálisis:",
+                options: [
+                    "El movimiento del neoromanticismo con el interés por lo oculto.",
+                    "El concepto de tabula rasa de John Locke",
+                    "La frenología que atribuía cada facultad mental a una zona del cerebro",
+                    "Las investigaciones en animales a partir del darwinismo."
+                ],
+                answer: "El movimiento del neoromanticismo con el interés por lo oculto.",
+                explanation: "El neoromanticismo de finales del siglo XIX, con su fascinación por lo irracional, los sueños, lo oculto y las profundidades de la mente, creó un clima cultural propicio para las ideas psicoanalíticas."
+            },
+            {
+                module: 3,
+                question: "En el psicoanálisis:",
+                options: [
+                    "Freud comienza estudiando los casos de histeria a los cuales los médicos no hallaban causas orgánicas.",
+                    "Freud explica su teoría partiendo de los estudios de la introspección.",
+                    "Freud plantea la tesis según la cual cada sistema social establece sus principios particulares.",
+                    "Freud propone en el comienzo de sus trabajos, utilizar el método dialéctico retomando los aportes de Hume."
+                ],
+                answer: "Freud comienza estudiando los casos de histeria a los cuales los médicos no hallaban causas orgánicas.",
+                explanation: "El punto de partida de Freud fue la práctica clínica con pacientes histéricas, cuyos síntomas físicos no tenían una explicación médica, lo que lo llevó a postular la existencia de causas psíquicas inconscientes."
+            },
+            {
+                module: 3,
+                question: "En su primera conferencia del año 1910, Freud explica la doble conciencia como:",
+                options: [
+                    "Por un lado un estado anímico consciente y por el otro uno inconsciente.",
+                    "A la memoria por un lado y por el otro a la percepción.",
+                    "Una escisión de la personalidad.",
+                    "Lo que se puede estudiar en condiciones experimentales."
+                ],
+                answer: "Por un lado un estado anímico consciente y por el otro uno inconsciente.",
+                explanation: "Freud utiliza el concepto de 'double conscience' de la psicopatología francesa para introducir su idea de que en un mismo individuo coexisten agrupaciones anímicas separadas, una consciente y otra inconsciente."
+            },
+            {
+                module: 3,
+                question: "El magnetismo animal de Mesmer fue un antecedente del psicoanálisis, con el cual:",
+                options: [
+                    "se pudo ver que era útil para el tratamiento de las enfermedades mentales",
+                    "se pudo ver el valor de la sugestión",
+                    "fue el origen sobre la investigación de la hipnosis.",
+                    "todas son correctas"
+                ],
+                answer: "todas son correctas",
+                explanation: "Aunque su teoría del 'fluido' fue descartada, la práctica de Mesmer fue crucial: demostró que se podían tratar síntomas mentales (valor de la sugestión) y fue el punto de partida para la investigación sistemática de la hipnosis, que a su vez fue un antecedente directo del método de Freud."
+            },
+            {
+                module: 3,
+                question: "El estructuralismo de Titchener se diferencia del voluntarismo de Wundt en que:",
+                options: [
+                    "Titchener se enfocó en la función de la mente, mientras Wundt en su estructura.",
+                    "Titchener rechazó la introspección como método válido.",
+                    "Titchener se centró en el análisis pasivo de los elementos de la conciencia (estructuralismo), mientras Wundt enfatizaba el papel activo de la voluntad (voluntarismo).",
+                    "Wundt estudiaba solo las sensaciones y Titchener solo los sentimientos."
+                ],
+                answer: "Titchener se centró en el análisis pasivo de los elementos de la conciencia (estructuralismo), mientras Wundt enfatizaba el papel activo de la voluntad (voluntarismo).",
+                explanation: "Aunque Titchener fue discípulo de Wundt, su enfoque fue más reduccionista. Se interesó en el 'qué' y el 'cómo' de la experiencia (la estructura), mientras que Wundt también se interesaba por el 'porqué', dando un papel central a la voluntad y la apercepción (la organización activa de los elementos)."
+            },
+            {
+                module: 3,
+                question: "La 'ley del efecto' de Edward Thorndike, un antecedente clave del conductismo, establece que:",
+                options: [
+                    "Todo estímulo produce una respuesta inevitable.",
+                    "Las conductas seguidas por consecuencias satisfactorias tienden a repetirse, mientras que las seguidas por consecuencias desagradables tienden a desaparecer.",
+                    "El aprendizaje se produce por la simple asociación de dos estímulos en el tiempo.",
+                    "Los animales aprenden por una súbita comprensión del problema (insight)."
+                ],
+                answer: "Las conductas seguidas por consecuencias satisfactorias tienden a repetirse, mientras que las seguidas por consecuencias desagradables tienden a desaparecer.",
+                explanation: "Esta ley, derivada de sus experimentos con gatos en 'cajas problema', es la base del condicionamiento operante de Skinner, ya que pone el foco en cómo las consecuencias de una acción modifican la probabilidad de su futura ocurrencia."
+            },
+            {
+                module: 3,
+                question: "La importancia de la estancia de Freud con Jean-Martin Charcot en París radica en que:",
+                options: [
+                    "Aprendió el método experimental de laboratorio.",
+                    "Desarrolló su teoría sobre las etapas psicosexuales.",
+                    "Observó que los síntomas de la histeria podían ser producidos y eliminados por sugestión hipnótica, sugiriendo una causa psicológica y no orgánica.",
+                    "Fundó la primera sociedad psicoanalítica."
+                ],
+                answer: "Observó que los síntomas de la histeria podían ser producidos y eliminados por sugestión hipnótica, sugiriendo una causa psicológica y no orgánica.",
+                explanation: "El trabajo de Charcot con pacientes histéricas fue revelador para Freud. Le demostró que ideas o traumas podían tener un poder patógeno (causar síntomas físicos), sentando las bases para su posterior exploración del inconsciente y el método catártico."
+            },
+            {
+                module: 3,
+                question: "Horacio Piñero es una figura clave en la psicología argentina y latinoamericana por:",
+                options: [
+                    "Introducir el psicoanálisis en Buenos Aires.",
+                    "Fundar el primer laboratorio de psicología experimental de Latinoamérica en 1898.",
+                    "Desarrollar la teoría de los grupos operativos.",
+                    "Realizar los primeros estudios sobre orientación vocacional en la región."
+                ],
+                answer: "Fundar el primer laboratorio de psicología experimental de Latinoamérica en 1898.",
+                explanation: "Siguiendo el modelo de Wundt, Piñero estableció un laboratorio en Buenos Aires, marcando el inicio de la psicología como disciplina científica y académica en la región, con un fuerte sesgo positivista y experimental."
+            },
+
+            // MÓDULO 4: Ámbitos de la psicología (de a.txt y aa.txt)
+            {
+                module: 4,
+                question: "La psicología de la Gestalt surge en Europa en los principios del siglo XX:",
+                options: [
+                    "Utiliza el método observacional que en psicología recibe el nombre de \"introspectivo\".",
+                    "Surge como una reacción frente al elementarismo y atomismo del Estructuralismo.",
+                    "Los conceptos propuestos por Edward Bradford Titchener (1867-1927), son los antecedentes más cercanos a la Psicología de la Gestalt.",
+                    "La misma surge en base a los antecedentes directos de los fisiólogos y las mediciones intelectuales."
+                ],
+                answer: "Surge como una reacción frente al elementarismo y atomismo del Estructuralismo.",
+                explanation: "La Gestalt se opuso radicalmente a la idea de Wundt y Titchener de descomponer la conciencia en elementos. Su postulado central es que la experiencia se da en totalidades organizadas (el todo es más que la suma de las partes)."
+            },
+            {
+                module: 4,
+                question: "La psicología de la Gestalt plantea:",
+                options: [
+                    "estudios sobre el pensamiento de los chimpancés basados en la resolución de problemas",
+                    "críticas al conductismo y destaca la importancia de realizar análisis globales",
+                    "critica el método de la introspección, utilizado por la psicología experimental",
+                    "todas son correctas"
+                ],
+                answer: "todas son correctas",
+                explanation: "La Gestalt realizó aportes en múltiples frentes: estudió el pensamiento y la resolución de problemas (Köhler), criticó al conductismo por su enfoque E-R y al estructuralismo por su método introspectivo y su atomismo."
+            },
+            {
+                module: 4,
+                question: "Son antecedentes del conductismo:",
+                options: [
+                    "Los estudios acerca de los reflejos reactivos realizados por Romanes",
+                    "La psicología experimental y el método científico de la introspección",
+                    "Los estudios acerca de la inteligencia animal desarrollados por Kohler",
+                    "Las leyes de aprendizaje expuestas por Thorndike"
+                ],
+                answer: "Las leyes de aprendizaje expuestas por Thorndike",
+                explanation: "La 'Ley del Efecto' de Thorndike, que establece que las conductas seguidas de consecuencias satisfactorias tienden a repetirse, es un antecedente directo del concepto de refuerzo en el conductismo."
+            },
+            {
+                module: 4,
+                question: "Sobre el conductismo:",
+                options: [
+                    "En el comienzo de la teoría se propone el estudio de los fenómenos de conciencia.",
+                    "Uno de los antecedentes del conductismo fue el modelo de psiquismo inconsciente freudiano.",
+                    "La psicología animal fue uno de los pilares sobre el que se asentó el conductismo.",
+                    "Las conductas que tienen mejores consecuencias tenderán a reproducirse en el corto plazo, pero no en el futuro."
+                ],
+                answer: "La psicología animal fue uno de los pilares sobre el que se asentó el conductismo.",
+                explanation: "El conductismo se apoyó fuertemente en la psicología comparada y la experimentación con animales (Pavlov, Thorndike) bajo la premisa darwiniana de la continuidad entre especies."
+            },
+            {
+                module: 4,
+                question: "Desde la psicología humanista se entiende que el sujeto:",
+                options: [
+                    "Logra un mayor estado de bienestar cuando se encuentra autorrealizándose.",
+                    "Está determinado únicamente por su ambiente.",
+                    "Puede desarrollar sus potencialidades a través del descubrimiento del inconsciente.",
+                    "Posee conductas que pueden ser cambiadas a través del condicionamiento operante."
+                ],
+                answer: "Logra un mayor estado de bienestar cuando se encuentra autorrealizándose.",
+                explanation: "La psicología humanista, especialmente Maslow, postula la autorrealización como la necesidad humana más elevada, representando el impulso a desarrollar plenamente el propio potencial."
+            },
+            {
+                module: 4,
+                question: "En los postulados de la Psicología Humanista:",
+                options: [
+                    "Pretende la consideración global de la persona y la acentuación en sus aspectos existenciales.",
+                    "El principal énfasis no es el rigor experimental sino por acercarse a los problemas reales de las personas.",
+                    "Se renuncia a una epistemología científica como la que llevaba el conductismo.",
+                    "Todas son correctas."
+                ],
+                answer: "Todas son correctas.",
+                explanation: "La psicología humanista se caracteriza por su visión holística, su enfoque en la experiencia subjetiva y los problemas humanos reales, y su rechazo al determinismo y al rigor experimental del conductismo."
+            },
+            {
+                module: 4,
+                question: "En el campo de la salud mental:",
+                options: [
+                    "se entiende por salud, los aspectos biológicos del sujeto, los cuales son atendidos por el equipo interdisciplinario",
+                    "se entiende por salud, la ausencia de enfermedades psicofísicas",
+                    "se concibe a la salud como integral, tomando los determinantes sociales, económicos, de vigilancia control epidemiológico, la promoción y la prevención entre otros",
+                    "la salud mental incluye solo los aspectos psicológicos del sujeto"
+                ],
+                answer: "se concibe a la salud como integral, tomando los determinantes sociales, económicos, de vigilancia control epidemiológico, la promoción y la prevención entre otros",
+                explanation: "El modelo actual de salud mental, alineado con la OMS, es biopsicosocial. Supera la visión de 'ausencia de enfermedad' para incluir el bienestar y los múltiples determinantes sociales y económicos de la salud."
+            },
+            {
+                module: 4,
+                question: "La psicología del trabajo y de las organizaciones:",
+                options: [
+                    "surge a comienzos del siglo XIX con los desarrollos de la Sociología",
+                    "Atiende solo los problemas de la productividad de los trabajadores",
+                    "promueve la mejora de los salarios y las condiciones de vida de los trabajadores",
+                    "se ocupa de la salud laboral, promoviendo el mayor grado de bienestar físico, mental y social de los trabajadores."
+                ],
+                answer: "se ocupa de la salud laboral, promoviendo el mayor grado de bienestar físico, mental y social de los trabajadores.",
+                explanation: "Este ámbito de la psicología aplicada se enfoca en la interacción entre la persona y su entorno laboral, buscando optimizar tanto el bienestar y la salud del trabajador como la eficacia de la organización."
+            },
+            {
+                module: 4,
+                question: "En el campo de trabajo de la discapacidad, entendemos que:",
+                options: [
+                    "La discapacidad es causada inicialmente por una enfermedad neurológica",
+                    "La discapacidad se produce a partir de una relación negativa de la condición de salud de la persona y el contexto",
+                    "La discapacidad está relacionada con la incapacidad de vincularse con el entorno familiar",
+                    "La discapacidad es responsabilidad de la persona debido a su negatividad a vincularse"
+                ],
+                answer: "La discapacidad se produce a partir de una relación negativa de la condición de salud de la persona y el contexto",
+                explanation: "Este es el núcleo del modelo social de la discapacidad (adoptado por la OMS y la ONU), que entiende la discapacidad no como un atributo de la persona, sino como el resultado de la interacción con un entorno que presenta barreras."
+            },
+            {
+                module: 4,
+                question: "Según Conde (2003) los/as psicólogos/as en la Educación:",
+                options: [
+                    "Trabajan desde un marco teórico psicoanalítico y humanista.",
+                    "Utilizan diversas técnicas tales como entrevista, taller, observación entre otras.",
+                    "Intervienen en sus prácticas desde un nivel de asistencia.",
+                    "Todas son correctas."
+                ],
+                answer: "Utilizan diversas técnicas tales como entrevista, taller, observación entre otras.",
+                explanation: "El rol del psicólogo educacional es multifacético e implica el uso de diversas herramientas para analizar e intervenir en los procesos de enseñanza-aprendizaje, la dinámica institucional y los aspectos vinculares."
+            },
+            {
+                module: 4,
+                question: "La psicología del Deporte y la Actividad Física como ámbito:",
+                options: [
+                    "Es una rama de la psicología en la que trata de relacionar los espacios vinculares, grupales e intrapsíquicos.",
+                    "Interviene en los deportes para lograr el éxito deportivo a través de los factores intrapsíquicos.",
+                    "Se dedica exclusivamente a los aspectos emocionales de los deportistas de alto rendimiento.",
+                    "Trabaja la incidencia de lo mental, en la iniciación deportiva, la salud y el rendimiento deportivo."
+                ],
+                answer: "Trabaja la incidencia de lo mental, en la iniciación deportiva, la salud y el rendimiento deportivo.",
+                explanation: "Este ámbito abarca un amplio espectro, desde el fomento de la actividad física saludable en la población general hasta la optimización del rendimiento en deportistas, trabajando sobre factores como la motivación, concentración y manejo de la presión."
+            },
+            {
+                module: 4,
+                question: "El censo nacional de psicólogos de 2014 evidenció que:",
+                options: [
+                    "El número de egresadas/os se distribuye en forma homogénea en todo el territorio nacional.",
+                    "Los principales ámbitos de trabajo son: psicoanálisis, clínica grupal y Laboral.",
+                    "Es superior el número de egresados que de egresadas",
+                    "La inserción en el Sistema Nacional Integrado de Salud es insuficiente"
+                ],
+                answer: "La inserción en el Sistema Nacional Integrado de Salud es insuficiente",
+                explanation: "Giménez analiza los datos del censo y concluye que, a pesar del alto número de profesionales, su inserción en el sistema público de salud es aún débil, lo que genera barreras de acceso para la población."
+            },
+            {
+                module: 4,
+                question: "Vygotsky, representante de la psicología cognitiva considera que:",
+                options: [
+                    "El pensamiento y lenguaje surgen del intercambio de los niños con adultos y otros niños.",
+                    "El lenguaje se construye en estadios definidos de acuerdo al proceso madurativo.",
+                    "El lenguaje es independiente del pensamiento y no es una condición para el mismo.",
+                    "El lenguaje al igual que los reflejos son producto de una capacidad innata."
+                ],
+                answer: "El pensamiento y lenguaje surgen del intercambio de los niños con adultos y otros niños.",
+                explanation: "Para Vygotsky, las funciones psicológicas superiores, como el pensamiento y el lenguaje, tienen un origen social. Se desarrollan primero en el plano interpersonal (interacción) y luego se internalizan."
+            },
+            {
+                module: 4,
+                question: "Para Piaget:",
+                options: [
+                    "la asimilación es un proceso donde el niño absorbe la realidad exterior adaptándola a las estructuras del organismo.",
+                    "para que se produzca el conocimiento lógico racional sólo es necesario el lenguaje.",
+                    "en la asimilación el propio organismo se adapta a las demandas externas.",
+                    "el conflicto cognitivo es fundamental para lograr el aprendizaje."
+                ],
+                answer: "la asimilación es un proceso donde el niño absorbe la realidad exterior adaptándola a las estructuras del organismo.",
+                explanation: "En la teoría de Piaget, la asimilación es el proceso por el cual el sujeto integra nueva información a sus esquemas cognitivos existentes, sin modificarlos. Es el proceso complementario a la acomodación."
+            },
+            {
+                module: 4,
+                question: "La teoría cognitiva considera:",
+                options: [
+                    "Que los procesos mentales son paralelos y consecuencia de los aprendizajes conductuales realizados.",
+                    "Que el cerebro es explicado en términos de funcionamiento serial",
+                    "Que los procesos mentales no son relevantes como objeto de estudio",
+                    "Que el cerebro es una unidad de cálculo formado por unidades simples interconectadas"
+                ],
+                answer: "Que el cerebro es una unidad de cálculo formado por unidades simples interconectadas",
+                explanation: "Influenciada por la metáfora del ordenador, la psicología cognitiva temprana (conexionismo) modeló el cerebro como un sistema de procesamiento de información compuesto por unidades simples (neuronas) interconectadas que operan en paralelo."
+            },
+            {
+                module: 4,
+                question: "El concepto de 'insight' (comprensión súbita) en los experimentos de Wolfgang Köhler con chimpancés es una crítica directa a:",
+                options: [
+                    "La idea psicoanalítica de la represión.",
+                    "El aprendizaje por ensayo y error del conductismo.",
+                    "La introspección del estructuralismo.",
+                    "La jerarquía de necesidades de Maslow."
+                ],
+                answer: "El aprendizaje por ensayo y error del conductismo.",
+                explanation: "Köhler (Gestalt) observó que los chimpancés no resolvían problemas probando al azar (como los gatos de Thorndike), sino que parecían tener una comprensión repentina de la situación, reorganizando perceptualmente los elementos del campo para alcanzar una solución. Esto desafiaba la visión mecanicista del aprendizaje conductista."
+            },
+            {
+                module: 4,
+                question: "La 'caja de Skinner' es un dispositivo experimental diseñado para estudiar:",
+                options: [
+                    "El condicionamiento clásico.",
+                    "El condicionamiento operante.",
+                    "La percepción de la profundidad.",
+                    "Los procesos de memoria a corto plazo."
+                ],
+                answer: "El condicionamiento operante.",
+                explanation: "La caja de Skinner permitía un control preciso de las contingencias de refuerzo. Una rata o paloma podía realizar una conducta (presionar una palanca) y recibir una consecuencia (comida), permitiendo a Skinner estudiar sistemáticamente cómo los reforzadores y castigos moldean la conducta voluntaria."
+            },
+            {
+                module: 4,
+                question: "Según Carl Rogers (psicología humanista), las condiciones para el crecimiento terapéutico son:",
+                options: [
+                    "Interpretación de los sueños, asociación libre y análisis de la transferencia.",
+                    "Refuerzo positivo, refuerzo negativo y castigo.",
+                    "Empatía, congruencia (autenticidad) y aceptación incondicional positiva.",
+                    "Desafío de creencias irracionales y asignación de tareas conductuales."
+                ],
+                answer: "Empatía, congruencia (autenticidad) y aceptación incondicional positiva.",
+                explanation: "Rogers postuló que, más que una técnica específica, lo que facilita el cambio es la calidad de la relación terapéutica. Si el terapeuta puede ofrecer estas tres condiciones, el cliente podrá movilizar sus propios recursos para el crecimiento y la autorrealización."
+            },
+            {
+                module: 4,
+                question: "El concepto de 'Zona de Desarrollo Próximo' (ZDP) de Vygotsky se refiere a:",
+                options: [
+                    "La etapa de desarrollo cognitivo en la que se encuentra un niño según Piaget.",
+                    "El nivel de desarrollo que un niño ha alcanzado de forma independiente.",
+                    "La distancia entre el nivel de desarrollo real de un niño y el nivel de desarrollo potencial que puede alcanzar con la guía de un adulto o un par más capaz.",
+                    "El conjunto de habilidades innatas que un niño posee al nacer."
+                ],
+                answer: "La distancia entre el nivel de desarrollo real de un niño y el nivel de desarrollo potencial que puede alcanzar con la guía de un adulto o un par más capaz.",
+                explanation: "La ZDP es un concepto clave en la teoría socio-histórica. Destaca que el aprendizaje tira del desarrollo; es en la interacción social y con la ayuda de otros donde el niño puede lograr lo que aún no puede hacer por sí solo, internalizando nuevas habilidades."
+            },
+            {
+                module: 4,
+                question: "El censo de psicólogos en Uruguay (Giménez, 2014) reveló, entre otras cosas:",
+                options: [
+                    "Una distribución equitativa de profesionales en todo el territorio nacional.",
+                    "Una predominancia de psicólogos hombres sobre las mujeres.",
+                    "Una fuerte concentración de profesionales en Montevideo y una inserción aún insuficiente en el Sistema Nacional Integrado de Salud (SNIS).",
+                    "Que el ámbito laboral es el principal campo de inserción profesional."
+                ],
+                answer: "Una fuerte concentración de profesionales en Montevideo y una inserción aún insuficiente en el Sistema Nacional Integrado de Salud (SNIS).",
+                explanation: "Los datos del censo mostraron una gran concentración geográfica en la capital y, a pesar del alto número de psicólogos per cápita, persistían barreras para el acceso a la atención en salud mental en el sistema público, indicando una mala distribución y una inserción laboral incompleta."
+            }
+        ];
+
+        // Definición de los quizzes
+        const quizzes = {
+            // Fundamentos de la Psicología - Sub-módulos
+            fundamentos_modulo1: {
+                title: "Fundamentos de la Psicología - Módulo 1",
+                questions: all_fundamentos_questions.filter(q => q.module === 1)
+            },
+            fundamentos_modulo2: {
+                title: "Fundamentos de la Psicología - Módulo 2",
+                questions: all_fundamentos_questions.filter(q => q.module === 2)
+            },
+            fundamentos_modulo3: {
+                title: "Fundamentos de la Psicología - Módulo 3",
+                questions: all_fundamentos_questions.filter(q => q.module === 3)
+            },
+            fundamentos_modulo4: {
+                title: "Fundamentos de la Psicología - Módulo 4",
+                questions: all_fundamentos_questions.filter(q => q.module === 4)
+            },
+            // Historia de la Psicología - Documentos
+            historia_doc1: {
+                title: "Historia de la Psicología - Documento 1",
+                questions: [
+                    // Preguntas de ejemplo para el Documento 1
+                    {
+                        question: "¿Cuál fue el principal enfoque de la psicología en sus inicios filosóficos?",
+                        options: ["El estudio de la conducta observable.", "La naturaleza del alma y la mente.", "La función de los procesos mentales.", "El impacto social de la psicología."],
+                        answer: "La naturaleza del alma y la mente.",
+                        explanation: "En los orígenes filosóficos de la psicología, pensadores como Platón y Aristóteles se centraron en cuestiones metafísicas relacionadas con el alma y su relación con el cuerpo."
+                    },
+                    {
+                        question: "¿Qué civilización antigua es conocida por sus primeros registros de tratamientos para trastornos mentales?",
+                        options: ["Grecia", "Roma", "Egipto", "Mesopotamia"],
+                        answer: "Egipto",
+                        explanation: "Los antiguos egipcios tenían algunos de los registros más tempranos de tratamientos para problemas mentales, a menudo mezclando prácticas médicas y religiosas."
+                    }
+                ]
+            },
+            historia_doc2: {
+                title: "Historia de la Psicología - Documento 2",
+                questions: [
+                    // Preguntas de ejemplo para el Documento 2
+                    {
+                        question: "¿Qué movimiento filosófico del Renacimiento enfatizó la importancia del ser humano y su potencial?",
+                        options: ["Escolasticismo", "Humanismo", "Racionalismo", "Empirismo"],
+                        answer: "Humanismo",
+                        explanation: "El Humanismo renacentista se caracterizó por un renovado interés en el ser humano, su dignidad y sus capacidades, en contraste con el enfoque teocéntrico medieval."
+                    },
+                    {
+                        question: "¿Quién es considerado el padre de la filosofía moderna y propuso el dualismo mente-cuerpo?",
+                        options: ["John Locke", "David Hume", "René Descartes", "Immanuel Kant"],
+                        answer: "René Descartes",
+                        explanation: "René Descartes, con su famosa frase 'Pienso, luego existo', estableció las bases del racionalismo moderno y postuló una clara distinción entre la mente (res cogitans) y el cuerpo (res extensa)."
+                    }
+                ]
+            },
+            historia_doc3: {
+                title: "Historia de la Psicología - Documento 3",
+                questions: [
+                    // Preguntas de ejemplo para el Documento 3
+                    {
+                        question: "¿Cuál fue el objetivo principal del primer laboratorio de psicología experimental de Wilhelm Wundt?",
+                        options: ["Estudiar la conducta animal.", "Analizar la estructura de la conciencia.", "Desarrollar terapias para trastornos mentales.", "Investigar el desarrollo infantil."],
+                        answer: "Analizar la estructura de la conciencia.",
+                        explanation: "Wundt y sus seguidores, los estructuralistas, buscaban descomponer la conciencia en sus elementos más básicos (sensaciones y sentimientos) utilizando la introspección experimental."
+                    },
+                    {
+                        question: "¿Qué escuela psicológica surgió en oposición al estructuralismo, enfocándose en el 'para qué' de la mente?",
+                        options: ["Conductismo", "Funcionalismo", "Psicoanálisis", "Gestalt"],
+                        answer: "Funcionalismo",
+                        explanation: "El funcionalismo, influenciado por la teoría de la evolución de Darwin, se interesó en la función adaptativa de los procesos mentales y el comportamiento, es decir, cómo ayudan a los organismos a sobrevivir y prosperar."
+                    }
+                ]
+            },
+            historia_doc4: {
+                title: "Historia de la Psicología - Documento 4",
+                questions: [
+                    {'pregunta': 'El período de 1830 a 1880 en Uruguay fue una época de gran estabilidad política y paz social.', 'respuesta': false, 'justificacion': 'El documento describe este período como uno de constante conflicto. Cita a José Pedro Varela, quien afirmó que hubo "dieciocho revoluciones" en cuarenta y cinco años.'},
+                    {'pregunta': 'La Constitución de 1830 fue elogiada por ser un texto práctico y perfectamente adaptado a la realidad social del país, especialmente a la de la población rural.', 'respuesta': false, 'justificacion': 'Fue criticada por su carácter teórico, por estar fundamentada en un saber académico más que en la realidad social del país y por no considerar la vida de la población rural y el caudillismo.'},
+                    {'pregunta': 'José Pedro Varela consideraba que la educación popular era la base fundamental para construir una república y formar ciudadanos.', 'respuesta': true, 'justificacion': 'El documento cita directamente a Varela diciendo: "La escuela, pues, es la base de la república" y "para establecer la república, lo primero es formar los republicanos".'},
+                    {'pregunta': 'El "militarismo" liderado por Lorenzo Latorre fue un proyecto exclusivamente militar, sin apoyo de sectores civiles o económicos.', 'respuesta': false, 'justificacion': 'Fue un "ensamble que conjugó el interés de sectores de poderío económico y fáctico del país", como los ganaderos ricos de la Asociación Rural del Uruguay (ARU) y los grupos financieros.'},
+                    {'pregunta': 'La Ley de Educación Común de Varela, promulgada en 1877, estableció que la enseñanza pública debía ser gratuita, obligatoria y católica.', 'respuesta': false, 'justificacion': 'Los tres principios que instauró la ley fueron la gratuidad, la obligatoriedad y la laicidad de la enseñanza.'},
+                    {'pregunta': 'La introducción del positivismo en Uruguay fue un proceso armónico que no generó polémicas con las corrientes de pensamiento existentes.', 'respuesta': false, 'justificacion': 'El texto afirma que la presencia del positivismo "desencadenó una controversia pública" y "la gran controversia entre espiritualistas y positivistas".'},
+                    {'pregunta': 'Carlos Vaz Ferreira propuso y fundó el primer laboratorio o "gabinete" de psicología en Uruguay alrededor de 1897.', 'respuesta': true, 'justificacion': 'El documento indica que Vaz Ferreira formó un "pequeño gabinete de Psicología" y que él mismo afirmaba que "fue el primero que se instaló en Sud América".'},
+                    {'pregunta': 'El laboratorio de psicología fundado por Vaz Ferreira tuvo una larga y próspera vida, convirtiéndose en el principal centro de investigación del país.', 'respuesta': false, 'justificacion': 'El laboratorio tuvo una existencia breve; su material se inutilizó, Vaz Ferreira cambió sus intereses y su sucesor no consideró que valiera la pena mantenerlo.'},
+                    {'pregunta': 'Varela creía que los malos gobiernos eran la causa principal de los problemas de la nación.', 'respuesta': false, 'justificacion': 'Varela argumentaba lo contrario, que "es el estado social de esas mismas naciones el que marca el tipo que deben tener sus gobiernos". La causa era la ignorancia del pueblo.'},
+                    {'pregunta': 'Francisco Berra, pedagogo influyente, sostenía que para enseñar era fundamental que el maestro estudiara la naturaleza psicológica del niño.', 'respuesta': true, 'justificacion': 'Se cita a Berra afirmando que "antes de enseñar es necesario estudiar la naturaleza psicológica del discípulo".'},
+                    {'pregunta': 'En 1830, la mayor parte de la población uruguaya vivía en Montevideo.', 'respuesta': false, 'justificacion': 'El documento especifica que, de los 74.000 habitantes, el 81% residía en la campaña.'},
+                    {'pregunta': 'El libro de Vaz Ferreira, "Curso Expositivo de Psicología Elemental", fue adoptado oficialmente en 1898 como texto para la enseñanza de la psicología.', 'respuesta': true, 'justificacion': 'Se menciona que "En febrero de 1898, el Consejo de Enseñanza Secundaria y Superior resolvió adoptar para la enseñanza de la psicología, el texto Curso de Psicología Elemental".'},
+                    {'pregunta': 'En su curso de psicología, Vaz Ferreira promovía una única escuela de pensamiento, rechazando todas las demás.', 'respuesta': false, 'justificacion': 'Su método era "estrictamente imparcial, que concede un lugar a todas las teorías importantes", buscando evitar los dogmatismos.'},
+                    {'pregunta': 'Varela abogó por la inclusión de las mujeres en la educación superior.', 'respuesta': true, 'justificacion': 'El texto indica que Varela "planteó que ese modelo debía concluir y posibilitar la inclusión de la mujer a la educación superior".'},
+                    {'pregunta': 'Para estudiar los fenómenos mentales del niño, Francisco Berra propuso utilizar principalmente la introspección directa.', 'respuesta': false, 'justificacion': 'Berra argumentaba que no se pueden conocer los fenómenos internos del niño de manera directa, por lo que el camino es estudiarlos "a través de manifestaciones exteriores".'},
+                    {'pregunta': 'El positivismo y el espiritualismo fueron dos corrientes filosóficas que entraron en una fuerte disputa en el campo intelectual uruguayo a finales del siglo XIX.', 'respuesta': true, 'justificacion': 'El documento describe esta disputa como "la gran controversia entre espiritualistas y positivistas", definiéndola como "la lucha de dos épocas, de dos sistemas, de dos ideales políticos".'},
+                    {'pregunta': 'Vaz Ferreira consideraba el método de la introspección como completo y suficiente para hacer de la psicología una ciencia.', 'respuesta': false, 'justificacion': 'Vaz Ferreira consideraba el método de la introspección como "limitado", por lo que proponía sumar la "observación exterior a través de la Psicología Fisiológica".'},
+                    {'pregunta': 'El "principismo" fue un movimiento político de jóvenes universitarios que apoyaba a los caudillos rurales.', 'respuesta': false, 'justificacion': 'Los principistas se opusieron a los caudillos, a quienes consideraban representantes de la "barbarie" y el "caos".'},
+                    {'pregunta': 'Vaz Ferreira presentó la psicometría de Wundt como un desarrollo francés, y la psicología mórbida de Charcot como una corriente alemana.', 'respuesta': false, 'justificacion': 'Vaz Ferreira presentó el surgimiento de la psicometría de Wundt "en Alemania", y la corriente de Charcot como surgida "en Francia".'},
+                    {'pregunta': 'Dámaso Antonio Larrañaga, uno de los primeros intelectuales del país, fue un férreo defensor del positivismo.', 'respuesta': false, 'justificacion': 'Larrañaga se formó en la Escolástica y su psicología correspondía a una "metafísica del espíritu", lo cual se opone a los fundamentos del positivismo.'}
+                ]
+            },
+            historia_doc5: {
+                title: "Historia de la Psicología - Documento 5",
+                questions: [
+                    {'pregunta': 'El período del "primer batllismo" (1903-1931) se caracterizó por promover un Estado con mínima intervención en la economía y en asuntos sociales.', 'respuesta': false, 'justificacion': 'En esta etapa se entendía que la intervención del Estado debía traducirse en el desarrollo de sus "funciones secundarias", como la salud, la educación y servicios públicos.'},
+                    {'pregunta': 'El proyecto de "matriz de ciudadanía" del batllismo buscaba disciplinar las pasiones del pueblo a través de la educación.', 'respuesta': true, 'justificacion': 'El texto afirma que la escuela debía "disciplinaremos nuestras pasiones" y que su labor era formar "el carácter del hombre futuro".'},
+                    {'pregunta': 'Enriqueta Compte y Riqué propuso en 1916 la creación de una Facultad de Pedagogía con fuerte base en la psicología experimental.', 'respuesta': true, 'justificacion': 'El documento menciona que Compte y Riqué propuso la creación de dicha facultad, preguntándose: "¿Cuáles son las conclusiones de la psicología experimental que pueden tener aplicación en la escuela primaria?".'},
+                    {'pregunta': 'Clemente Estable, en "El reino de las vocaciones", rechazó el uso de la psicotecnia para la orientación vocacional.', 'respuesta': false, 'justificacion': 'Estable vio en la psicotecnia un avance positivo, afirmando que la determinación de las condiciones psicofisiológicas para distintas disciplinas, "emprendida en parte por la Psicotecnia- acaso en feliz encuentro cierren el circuito".'},
+                    {'pregunta': 'El Laboratorio de Psicopedagogía fue creado el 13 de setiembre de 1933, con Sebastián Morey Otero como su primer director.', 'respuesta': true, 'justificacion': 'El Consejo Nacional de Enseñanza Primaria y Normal aprobó la creación del laboratorio en esa fecha, encomendando a Sebastián Morey Otero su dirección.'},
+                    {'pregunta': 'La misión del Laboratorio de Psicopedagogía se limitaba exclusivamente a aplicar tests a los alumnos.', 'respuesta': false, 'justificacion': 'Su misión incluía investigación psicopedagógica, fichas de normalistas, evaluación del rendimiento escolar y orientación profesional.'},
+                    {'pregunta': 'Sebastián Morey Otero consideraba que cualquier maestro podía aplicar tests psicológicos sin formación específica.', 'respuesta': false, 'justificacion': 'Morey Otero criticaba esa idea, afirmando que su aplicación requiere aprendizaje y que el uso de baremos extranjeros era una "falta técnica".'},
+                    {'pregunta': 'Waclaw Radecki fue un psiquiatra uruguayo que desarrolló la teoría del psicoanálisis en el país.', 'respuesta': false, 'justificacion': 'Radecki era un psicólogo polaco que desarrolló un sistema psicológico propio denominado "discriminacionismo afectivo".'},
+                    {'pregunta': 'La Liga Uruguaya de Higiene Mental fue fundada en 1924 por la Sección de Psiquiatría del Segundo Congreso Médico Nacional.', 'respuesta': true, 'justificacion': 'El texto señala que en dicho congreso, la Sección de Psiquiatría "deja establecida la Liga Uruguaya de Higiene Mental".'},
+                    {'pregunta': 'El Código del Niño de 1934 estableció la creación del Consejo del Niño para centralizar la protección de la infancia.', 'respuesta': true, 'justificacion': 'La ley, promulgada en 1934, creó el Consejo del Niño como el "organismo encargado del bienestar de los menores".'},
+                    {'pregunta': 'José Enrique Rodó fue un gran admirador de la cultura norteamericana y acuñó el término "arielismo" para promover sus valores.', 'respuesta': false, 'justificacion': 'Rodó fue un crítico de la admiración a la cultura de Estados Unidos, acuñando el término "nordomanía" en su obra "Ariel" para denunciar este fenómeno.'},
+                    {'pregunta': 'El "ascenso de las clases medias" en Uruguay a principios del siglo XX se debió principalmente a la expansión del sistema educativo y la administración del Estado.', 'respuesta': true, 'justificacion': 'El documento explica que este fenómeno fue consecuencia de la "expansión económica, la industrialización, el fortalecimiento del sistema educativo y la expansión de la administración del Estado".'},
+                    {'pregunta': 'Waclaw Radecki aplicó sus conocimientos de psicología a la selección de aviadores para el ejército de Brasil.', 'respuesta': true, 'justificacion': 'El texto menciona que Radecki, junto a la "Dirección de Aviación del ejército en Brasil, se dedicó a la investigación psicológica para la selección de aviadores".'},
+                    {'pregunta': 'Las "clases diferenciales" (1927) y la "ficha médico-psicopedagógica-social" fueron herramientas para estudiar científicamente a niños con dificultades.', 'respuesta': true, 'justificacion': 'El proyecto de las clases diferenciales estaba dirigido a "identificar y atender a falsos anormales y psíquicos", y la ficha tenía el objetivo de "elaborar criterios de selección y estudio científico".'},
+                    {'pregunta': 'El primer curso de "visitadoras de higiene", precursoras del servicio social, se dictó en 1928 por iniciativa de médicos de la Sanidad Escolar.', 'respuesta': true, 'justificacion': 'Se afirma que "En el año 1928, a iniciativa de los doctores Schiaffino y Ponce de León, se dictó un curso de dos años de duración con el objetivo de formar un grupo de visitadoras de higiene".'},
+                    {'pregunta': 'La dimensión mental de la infancia no fue un tema relevante para las políticas de protección en las primeras décadas del siglo XX.', 'respuesta': false, 'justificacion': 'Al contrario, en el campo de la higiene "ganaba fuerza la dimensión psíquica como un componente a considerar en las prácticas de cuidado", lo que llevó a la creación de la Higiene Mental.'},
+                    {'pregunta': 'El movimiento reformista de protección a la infancia debilitó el poder del Estado sobre los niños, fortaleciendo la autoridad de los padres.', 'respuesta': false, 'justificacion': 'El movimiento promovió "un involucramiento mayor por parte del Estado... fortaleciendo su poder y debilitando las facultades y derechos reconocidos a los padres".'},
+                    {'pregunta': 'Durante la década de 1920, la enseñanza de la psicología en los Institutos Normales se basaba exclusivamente en el manual de Vaz Ferreira.', 'respuesta': false, 'justificacion': 'La reforma de 1925, impulsada por Morey Otero, desplazó el viejo programa e incluyó "contenidos sobre psicoanálisis, psicología introspectiva, gestalt, conductismo y psicología colectiva".'},
+                    {'pregunta': 'La Sociedad de Psiquiatría del Uruguay fue fundada en 1923 por un grupo de jóvenes psiquiatras.', 'respuesta': true, 'justificacion': 'El texto confirma que "el 8 de noviembre de 1923, se fundó la Sociedad de Psiquiatría del Uruguay" por un grupo que incluía a Bernardo Etchepare y Santín Carlos Rossi.'},
+                    {'pregunta': 'El gobierno de la infancia a principios del siglo XX implicó la articulación de la educación con la salud, bajo el paradigma del higienismo y la eugenesia.', 'respuesta': true, 'justificacion': 'El documento describe una "composición entre educación y salud". El higienismo permeó la educación y se enfatizó que el propósito era beneficiar "la salud moral y física del individuo y la especie".'}
+                ]
+            },
+            historia_doc6: {
+                title: "Historia de la Psicología - Documento 6",
+                questions: [
+                    {'pregunta': 'El estudio del "normotipo" uruguayo fue un proyecto dirigido por el Dr. Carlos Vaz Ferreira para entender las características del adulto mayor en Montevideo.', 'respuesta': false, 'justificacion': 'El estudio fue sobre el niño y el adolescente, y fue un emprendimiento importante para la psicología en el país, contando con la participación de Emilio Mira y López.'},
+                    {'pregunta': 'La investigación del "normotipo" comenzó en abril de 1944 y fue una colaboración entre varias instituciones educativas.', 'respuesta': true, 'justificacion': 'Fue una colaboración entre el Consejo de Enseñanza Primaria y Normal, el Consejo de Enseñanza Secundaria, el Consejo del Niño y el de Enseñanza Industrial.'},
+                    {'pregunta': 'En el estudio del "normotipo", la sección médica fue la más numerosa y se dividió en más de 15 equipos de trabajo.', 'respuesta': false, 'justificacion': 'La sección psicológica fue la más numerosa y se subdividió en 11 equipos.'},
+                    {'pregunta': 'El Centro de Estudios Psicológicos de Montevideo fue creado en 1945 por discípulos de la escuela psicológica de Waclaw Radecki.', 'respuesta': true, 'justificacion': 'El acta fundacional del 29 de enero de 1945 indica que sus participantes se reconocieron como discípulos de la Escuela Psicológica de Radecki.'},
+                    {'pregunta': 'El Centro de Estudios Psicológicos ofrecía un plan de formación de dos años centrado exclusivamente en la psicología experimental.', 'respuesta': false, 'justificacion': 'El plan de formación era de cuatro años y abarcaba múltiples áreas como Psicología General, Social, Jurídica, Médica y Pedagógica.'},
+                    {'pregunta': 'El Primer Congreso Latinoamericano de Psicología se realizó en Montevideo en 1950, organizado por el Centro de Estudios Psicológicos.', 'respuesta': true, 'justificacion': 'Fue una propuesta del Centro de Estudios Psicológicos y se celebró en Montevideo a partir del 20 de julio de 1950.'},
+                    {'pregunta': 'Tras el éxito del primer congreso, el Segundo Congreso Latinoamericano de Psicología se celebró en Montevideo al año siguiente.', 'respuesta': false, 'justificacion': 'Se planeó realizarlo en Curitiba (Brasil) en 1953, pero fue aplazado y finalmente no se concretó.'},
+                    {'pregunta': 'La Clínica Médico Psicológica del Hospital Pedro Visca fue creada en 1947 bajo la dirección del Dr. Julio Marcos, con el objetivo de abordar el estudio psicosomático del niño.', 'respuesta': true, 'justificacion': 'Fue creada en setiembre de 1947 bajo la dirección del Dr. Julio Marcos para el estudio integral del niño, considerando su unidad psicosomática.'},
+                    {'pregunta': 'La Clínica Médico Psicológica se negó a utilizar técnicas psicoanalíticas, como la sala de juegos, por considerarlas poco científicas.', 'respuesta': false, 'justificacion': 'Al contrario, la clínica contó con una sala de juegos, un requerimiento que las corrientes psicoanalíticas consideraban necesario para el trabajo con niños.'},
+                    {'pregunta': 'En 1950, la Facultad de Medicina inició los cursos de Psicología Aplicada a la Infancia, cuya formación práctica se desarrollaba en la Clínica Médico Psicológica.', 'respuesta': true, 'justificacion': 'Los cursos se iniciaron en 1950 en la Sección Auxiliares del Médico de la Facultad de Medicina, con prácticas en la Clínica Médico Psicológica.'},
+                    {'pregunta': 'La primera propuesta para crear la Licenciatura en Psicología en la Facultad de Humanidades y Ciencias fue elaborada por Mario Berta en 1948 y se implementó de inmediato.', 'respuesta': false, 'justificacion': 'Hubo una propuesta inicial de Horacio Rimoldi en 1951 que no llegó a implementarse. Mario Berta fue central en la creación posterior.'},
+                    {'pregunta': 'La propuesta de Horacio Rimoldi para la licenciatura era muy exigente y requería que los aspirantes tuvieran estudios universitarios previos y conocimiento del idioma inglés.', 'respuesta': true, 'justificacion': 'Entre los requisitos se incluían "Antecedentes de haber cursado satisfactoriamente estudios completos en escuelas universitarias" y "Conocimiento de idioma inglés".'},
+                    {'pregunta': 'El Dr. Rimoldi encontró un ambiente académico muy receptivo y con excelentes recursos, lo que facilitó la rápida creación de la licenciatura bajo su dirección.', 'respuesta': false, 'justificacion': 'Rimoldi denunció reiteradas falencias, falta de interlocutores estables y deficiencias en los materiales, lo que creó un ambiente desgastante y poco receptivo.'},
+                    {'pregunta': 'La Licenciatura en Psicología en la Facultad de Humanidades y Ciencias se aprobó finalmente el 23 de marzo de 1956.', 'respuesta': true, 'justificacion': 'El documento confirma que en esa fecha "se aprobó la Propuesta de Licenciatura en Psicología".'},
+                    {'pregunta': 'El plan de estudios de 1956 para la licenciatura se organizó de manera que los conocimientos teóricos se impartían después de la práctica experimental.', 'respuesta': false, 'justificacion': 'El plan establecía una progresión que iba de lo teórico a lo aplicado y experimental, y de lo general a lo particular.'},
+                    {'pregunta': 'La Sociedad de Psicología del Uruguay se fundó en 1953 con el objetivo de promover la psicología únicamente como una disciplina científica.', 'respuesta': false, 'justificacion': 'Se fundó para "propender al desarrollo de la Psicología como ciencia y como profesión".'},
+                    {'pregunta': 'Durante la década de 1950, no existió ningún conflicto entre los campos de la psiquiatría y la psicología en Uruguay.', 'respuesta': false, 'justificacion': 'Hubo un importante conflicto por la delimitación del campo profesional, especialmente en lo referente a la psicoterapia, que la psiquiatría reclamaba como territorio exclusivo.'},
+                    {'pregunta': 'El Dr. Reyes Terra, en 1958, defendió que los psicólogos no médicos debían tener prohibido "el arte de curar", considerándolo "intrusismo científico".', 'respuesta': true, 'justificacion': 'Consideró a los psicólogos clínicos y psicoterapeutas no médicos como parte del "intrusismo científico".'},
+                    {'pregunta': 'Mario Berta, a pesar de dirigir el Instituto de Psicología, argumentó que la psicoterapia debía ser un monopolio exclusivo de los médicos psiquiatras.', 'respuesta': false, 'justificacion': 'Berta propuso la creación de una Escuela de Psicoterapia a la que pudieran acceder tanto psiquiatras como psicólogos, buscando una solución intermedia.'},
+                    {'pregunta': 'Juan Carlos Carrasco fue uno de los actores que defendió la idea de que los límites del ejercicio profesional de la psicología no eran inmutables.', 'respuesta': true, 'justificacion': 'Carrasco "cuestionó el planteo focalizando en el error que implica concebir estas definiciones como inmutables, naturalizadas e incuestionables".'},
+                    {'pregunta': 'La Sociedad de Psicologia del Uruguay se constituyó en diciembre de 1953 con la finalidad de propender al desarrollo de la Psicologia como ciencia y como profesión.', 'respuesta': true, 'justificacion': 'El texto confirma explícitamente esta información, señalando: "El 7 de diciembre de 1953, se constituyó la Sociedad de Psicología del Uruguay, con la finalidad de: \'propender al desarrollo de la Psicología como ciencia y como profesión\'".'},
+                    {'pregunta': 'La Facultad Libre de Psicología fue un proyecto del Centro de Estudios Psicológicos de Montevideo que nunca llegó a concretarse.', 'respuesta': false, 'justificacion': 'Sí llegó a funcionar. El Centro de Estudios Psicológicos de Montevideo comenzó a nombrarla como tal con el inicio de sus cursos en 1951 y para 1952 ya funcionaban dos años lectivos de la facultad.'},
+                    {'pregunta': 'En mayo de 1958, la Sociedad de Psiquiatría del Uruguay, en voz del Dr. Reyes Terra, abordó la relación entre Psiquiatría y Psicología a partir de la definición de intrusismo científico.', 'respuesta': true, 'justificacion': 'El documento confirma que el 27 de mayo de 1958, el Dr. Reyes Terra disertó sobre la relación entre psiquiatría y psicología, definiendo el intrusismo científico como "el conjunto de prácticas médico-terapéuticas realizadas por quienes no son médicos".'}
+                ]
+            },
+            historia_doc7: {
+                title: "Historia de la Psicología - Documento 7",
+                questions: [
+                    {'pregunta': 'La intervención de la UDELAR el 28 de octubre de 1973 fue decretada inmediatamente después de que una bomba explotara en la Facultad de Ingeniería.', 'respuesta': true, 'justificacion': 'El 27 de octubre de 1973 explotó una bomba en la Facultad de Ingeniería. Al día siguiente, el Poder Ejecutivo emitió el decreto que disponía la intervención.'},
+                    {'pregunta': 'La mayoría de los decanos y rectores interventores designados durante la dictadura eran militares sin trayectoria previa en la UDELAR.', 'respuesta': false, 'justificacion': 'Fueron, en su mayoría, personas con carreras docentes en los diferentes servicios universitarios, como Mario Berta o Luis Sayagués Laso.'},
+                    {'pregunta': 'Como resultado de las medidas represivas durante la intervención, cerca del 45% del personal docente de la UDELAR fue destituido.', 'respuesta': true, 'justificacion': 'Denuncias de la época y estudios posteriores afirmaron que "cerca del 45% del plantel docente fue eliminado por las diversas causales".'},
+                    {'pregunta': 'La Licenciatura en Psicología que funcionaba en la Facultad de Humanidades y Ciencias (FHC) fue cerrada tras la intervención de 1973 y nunca volvió a reabrir.', 'respuesta': true, 'justificacion': 'Se afirma que "La Licenciatura en Psicología cerró sus puertas y no volvió a abrir nunca más" y que "se cerró definitivamente".'},
+                    {'pregunta': 'La Escuela Universitaria de Psicología (EUP), creada en 1975, fue dirigida inicialmente por Juan Carlos Carrasco, quien diseñó su plan de estudios.', 'respuesta': false, 'justificacion': 'El primer director de la EUP fue el Dr. Mario Berta, quien también redactó el plan de formación. Juan Carlos Carrasco debió exiliarse.'},
+                    {'pregunta': 'El plan de estudios de la EUP fue diseñado para formar psicólogos con plenas capacidades para el ejercicio autónomo de la psicoterapia.', 'respuesta': false, 'justificacion': 'El plan de la EUP establecía que "las funciones del egresado se limitaban al psicodiagnóstico" y que "no tiene la preparación específica para ejercer psicoterapia".'},
+                    {'pregunta': 'En 1958, el Dr. Reyes Terra calificó el ejercicio de la psicoterapia por parte de psicólogos no médicos como "intrusismo en psiquiatría".', 'respuesta': true, 'justificacion': 'En la sesión del 27 de mayo de 1958, el Dr. Reyes Terra disertó sobre "El intrusismo en psiquiatría", refiriéndose a psicólogos clínicos y psicoanalistas no médicos.'},
+                    {'pregunta': 'Como solución a la disputa por la psicoterapia, Mario Berta propuso en 1958 la creación de una Escuela de Psicoterapia a la que pudieran acceder médicos y psicólogos.', 'respuesta': true, 'justificacion': 'Berta propuso "la creación de una Escuela Universitaria de Psicoterapia a la que podrían acceder Psicólogos y Médicos con título universitario".'},
+                    {'pregunta': 'Durante la dictadura, el presupuesto para la UDELAR aumentó considerablemente.', 'respuesta': false, 'justificacion': 'El documento afirma que "los fondos asignados a ese rubro disminuyeron sostenidamente en todo el período", mostrando una baja en la asignación por alumno.'},
+                    {'pregunta': 'El gobierno de facto puso fin al monopolio de la UDELAR sobre la educación superior al habilitar en 1984 la enseñanza privada de nivel terciario.', 'respuesta': true, 'justificacion': 'Un decreto de agosto de 1984 "habilitó la enseñanza privada de nivel terciario (dando pie a la creación de la primera universidad confesional)".'},
+                    {'pregunta': 'La propuesta de reglamentación de la profesión de psicólogo de 1980, elaborada por Berta y Grolero, fue bien recibida por los colectivos de psicólogos.', 'respuesta': false, 'justificacion': 'Generó un amplio rechazo. El Rector Interventor concluyó que "la mayoría de las respuestas fueron de rechazo" y que el anteproyecto debía desecharse.'},
+                    {'pregunta': 'Una de las críticas centrales al proyecto de Berta y Grolero fue que solo reconocía a la EUP como formación válida.', 'respuesta': true, 'justificacion': 'La Escuela de Tecnología Médica planteó que "se desconoce la formación en psicología de distintos espacios universitarios y solo reconoce a la EUP".'},
+                    {'pregunta': 'Durante la intervención, la actividad académica de la UDELAR se reorientó para priorizar la investigación científica por sobre la enseñanza aplicada.', 'respuesta': false, 'justificacion': 'Ocurrió lo contrario: "se prestó más atención a las tareas de enseñanza que a las de investigación" para formar egresados que respondieran a las "necesidades del mercado".'},
+                    {'pregunta': 'El convenio de 1976 con el BID proponía fortalecer las "carreras tecnológicas cortas".', 'respuesta': true, 'justificacion': 'Un punto central del proyecto con el BID era el fortalecimiento de las "carreras tecnológicas cortas" en diversas áreas.'},
+                    {'pregunta': 'Al finalizar la dictadura, las nuevas autoridades democráticas mantuvieron los exámenes de ingreso implementados por los interventores.', 'respuesta': false, 'justificacion': 'Una de las primeras medidas del CDC restaurado fue dejar "sin efecto las normas limitativas del ingreso y reingreso de estudiantes".'},
+                    {'pregunta': 'En 1971, el Dr. Tobler impulsó normas que restringían la psicoterapia al control de un médico especialista.', 'respuesta': true, 'justificacion': 'El Dr. Tobler elevó una propuesta de normas donde se puntualizaba "que la terapia debía ejercerse bajo control del médico especialista".'},
+                    {'pregunta': 'Las diferentes asociaciones de psicólogos actuaron de forma desarticulada durante la etapa final de la dictadura.', 'respuesta': false, 'justificacion': 'Hubo un proceso de unificación que llevó a que en octubre de 1983 se reunieran por primera vez todas las asociaciones de egresados, lo que culminó en la creación de la "Coordinadora de Psicólogos".'},
+                    {'pregunta': 'La APUEETM argumentó que la supervisión médica en psicoterapia era innecesaria, ya que los propios psiquiatras debían formarse aparte para ejercerla.', 'respuesta': true, 'justificacion': 'La APUEETM subrayó que "los médicos psiquiatras que en nuestro medio se dedican al tratamiento psicológico, han debido formarse para ello de manera independiente a su carrera médica".'},
+                    {'pregunta': 'Durante la intervención, la Facultad de Humanidades y Ciencias (FHC) fue cerrada por completo.', 'respuesta': false, 'justificacion': 'La Licenciatura en Psicología fue cerrada en la FHC, pero la facultad no. Al contrario, fue un espacio donde se crearon nuevas carreras.'},
+                    {'pregunta': 'La Sociedad de Psicología del Uruguay (SPU) objetó que institutos privados otorgaran títulos de psicólogo al mismo nivel que la UDELAR.', 'respuesta': true, 'justificacion': 'Ante un anteproyecto que habilitaba a institutos privados, la SPU "objetó duramente que instituciones privadas otorgasen título para ejercer la profesión al mismo nivel que la UdelaR".'}
+                ]
+            },
+            historia_doc8: {
+                title: "Historia de la Psicología - Documento 8",
+                questions: [
+                    {'pregunta': 'La Facultad de Psicología fue creada en 1985, inmediatamente después del fin de la dictadura.', 'respuesta': false, 'justificacion': 'El Consejo Directivo Central de la Universidad de la República aprobó la creación de la Facultad de Psicología el 15 de marzo de 1994.'},
+                    {'pregunta': 'La idea de unificar la formación en psicología en un "Centro Único" surgió por primera vez en la década de 1990.', 'respuesta': false, 'justificacion': 'Era una idea que "ya se venía gestando con anterioridad", citada en un documento de la Coordinadora de Psicólogos de julio de 1984.'},
+                    {'pregunta': 'El Instituto de Psicología de la Universidad de la República (IPUR), creado en 1988, tenía como objetivo fusionar los planes de estudio de la EUP y de Psicología Infantil.', 'respuesta': false, 'justificacion': 'El documento aclara que "No se trata, en consecuencia de unificar planes anteriores", sino de "crear un nuevo tipo de formación en Psicología".'},
+                    {'pregunta': 'La unificación de la formación en psicología involucró a la EUP, al Curso de Psicología Infantil y a docentes de la antigua Licenciatura de Humanidades.', 'respuesta': true, 'justificacion': 'Juan Carlos Carrasco, en su carta al rector, detalla que para analizar la situación fue necesario reunirse con todos esos gremios y sectores.'},
+                    {'pregunta': 'La ley que regula la profesión de psicólogo en Uruguay fue aprobada en 1991.', 'respuesta': false, 'justificacion': 'La ley definitiva (Nº 17.154) fue publicada y promulgada en agosto de 1999.'},
+                    {'pregunta': 'Los primeros intentos por regular la profesión de psicólogo en Uruguay comenzaron en la década de 1980.', 'respuesta': false, 'justificacion': 'La Sociedad de Psicología del Uruguay, fundada en 1953, ya declaraba en sus estatutos "la necesidad de regular la profesión".'},
+                    {'pregunta': 'La "Unión de Psicólogos del Uruguay" apoyó el proyecto de ley porque garantizaba el reconocimiento de títulos de institutos no universitarios.', 'respuesta': false, 'justificacion': 'Al contrario, este grupo expresó su preocupación porque sus profesionales "no estaban contemplados en la fría letra del proyecto".'},
+                    {'pregunta': 'Según la "Unión de Psicólogos del Uruguay", la enseñanza en la Facultad de Psicología de la UDELAR era plural y diversa.', 'respuesta': false, 'justificacion': 'Hicieron la afirmación opuesta, diciendo que en la Universidad "se sigue una corriente básicamente psicoanalista".'},
+                    {'pregunta': 'La Ley Nº 17.154 establece que cualquier persona con un título de un instituto de psicología, sin importar su nivel, puede ejercer.', 'respuesta': false, 'justificacion': 'El Artículo 2° exige un "Título de licenciado en psicología o equivalente, otorgado por... universidades o institutos universitarios habilitados por el Estado".'},
+                    {'pregunta': 'La Facultad de Psicología creó cinco Institutos (Clínica, Social, etc.) como parte de su transformación académica post-2007.', 'respuesta': true, 'justificacion': 'El texto menciona que en 2010 la Facultad concretó la creación de estos cinco institutos.'},
+                    {'pregunta': 'La Facultad creó el Centro de Investigación Clínica (CIC-P) y el Centro de Investigación Básica (CIB-Psi) para fortalecer la producción de conocimiento.', 'respuesta': true, 'justificacion': 'El documento confirma la creación del CIC-P en 2009 y del CIB-Psi en 2010 para fortalecer la investigación.'},
+                    {'pregunta': 'El nuevo plan de estudios de la Licenciatura, diseñado después de 2007, se caracterizaba por una estructura rígida.', 'respuesta': false, 'justificacion': 'El nuevo plan "prevé una estructura de amplia flexibilidad... que promueve la movilidad del estudiante... a través de itinerarios singulares".'},
+                    {'pregunta': 'Hacia 2009, la Facultad de Psicología ofrecía maestrías gratuitas en Psicología Social y Psicología Clínica.', 'respuesta': true, 'justificacion': 'Se indica que en 2009 se puso en marcha la primera edición de dichas maestrías y que "los estudios de posgrados y formación permanente son de carácter gratuito".'},
+                    {'pregunta': 'La creación de un Claustro General de Psicología fue una propuesta de Juan Carlos Carrasco en 1985 para unificar la formación.', 'respuesta': true, 'justificacion': 'En su carta al Rector, Carrasco, tras constatar que la idea de un "Centro Único" era unánime, propone la creación de dicho claustro como "ámbito general de discusión".'},
+                    {'pregunta': 'La comisión especial de la Ley 17.154 para habilitar profesionales no universitarios estaba integrada solo por delegados de la UDELAR.', 'respuesta': false, 'justificacion': 'El Artículo 4° establece que estaba integrada por representantes del MEC, la UDELAR y la Universidad Católica.'},
+                    {'pregunta': 'Un desafío de la Facultad a fines de la década de 2000 era la baja matrícula estudiantil.', 'respuesta': false, 'justificacion': 'Los desafíos eran "aumentar los niveles de retención" e "incrementar el número anual de graduados", lo que sugiere problemas en la permanencia, no en el ingreso.'},
+                    {'pregunta': 'El inicio de funciones del IPUR en 1988 enfrentó dificultades como la falta de presupuesto y el alto crecimiento de la matrícula.', 'respuesta': true, 'justificacion': 'El texto describe que la puesta en marcha del IPUR trajo "una serie de inconvenientes", entre ellos "el alto crecimiento de la matricula estudiantil y la falta de presupuesto".'},
+                    {'pregunta': 'La ley uruguaya que regula la profesión de psicólogo prohíbe ejercer a quienes obtuvieron su título en universidades extranjeras.', 'respuesta': false, 'justificacion': 'La ley permite el ejercicio a quienes posean un "Título... otorgado por universidades extranjeras, revalidado por la autoridad competente".'},
+                    {'pregunta': 'Uno de los objetivos del proyecto de transformación de la Facultad (2007-2010) era aumentar la dedicación horaria de sus docentes.', 'respuesta': true, 'justificacion': 'Dentro de las políticas de producción de conocimiento, se menciona como acción el "aumento de la dedicación horaria docente y estimulo al régimen de DT".'},
+                    {'pregunta': 'La Coordinadora de Psicólogos se opuso a incluir un artículo en la ley que permitiera a profesionales no universitarios tramitar su habilitación.', 'respuesta': false, 'justificacion': 'Se acordó incluir un artículo (el 3° de la ley final) "que garantiza la posibilidad de tramitar su Título Profesional... a través de la demostración de idoneidad".'}
+                ]
+            },
+            historia_doc9: {
+                title: "Historia de la Psicología - Documento 9",
+                questions: [
+                    {'pregunta': 'El desarrollo de la profesión de psicólogo en Uruguay es muy anterior al desarrollo de su academia o producción científica.', 'respuesta': true, 'justificacion': 'El documento afirma que el devenir de la psicología en Uruguay "se ha caracterizado fuertemente por el desarrollo de la profesión antes que el de su academia".'},
+                    {'pregunta': 'La intervención de la dictadura en 1973 significó un gran avance para la investigación psicológica en la Universidad.', 'respuesta': false, 'justificacion': 'El autor afirma que la intervención fue "un retroceso de casi más de dos décadas, si no más, donde la investigación psicología en la Universidad quedó relegada a un segundo plano".'},
+                    {'pregunta': 'El año 2005 es considerado clave para el "despertar académico" de la psicología en Uruguay, debido a nuevas políticas sociales y mayor financiamiento.', 'respuesta': true, 'justificacion': 'Se establece que "El año 2005 es clave" para la academización, mencionando la creación del MIDES, la ANII y el aumento del presupuesto universitario.'},
+                    {'pregunta': 'La "empresalización" de la universidad se refiere al fenómeno por el cual esta adopta una lógica de competencia, productividad y mercantilización.', 'respuesta': true, 'justificacion': 'El texto describe este fenómeno como la "infiltración de una lógica de la competencia propia de las empresas al interior de la universidad" y un "modelo productivista".'},
+                    {'pregunta': 'El nuevo plan de estudios de psicología aprobado en 2013 extendió la carrera a seis años para hacerla más rigurosa.', 'respuesta': false, 'justificacion': 'El documento especifica que una de las novedades del nuevo plan fue "la reducción de la cursada a cuatro años en lugar de 5".'},
+                    {'pregunta': 'El autor recomienda a los investigadores latinoamericanos publicar exclusivamente en revistas locales para evitar la influencia de agendas científicas extranjeras.', 'respuesta': false, 'justificacion': 'Si bien critica la presión por publicar en inglés, también menciona que la "endogamia" (circulación local) es una tendencia que puede llevar a la "segmentación de la ciencia". La postura es compleja, no un llamado al aislamiento.'},
+                    {'pregunta': 'El intento de cambiar el plan de estudios en 1971, que incluía crear un Doctorado, es visto como un hito en el esfuerzo de academización de la disciplina.', 'respuesta': true, 'justificacion': 'El documento señala que el plan de 1971, que incorporaba un "ciclo de Doctorado", parece querer "retomar aquella prioridad en la investigación psicológica".'},
+                    {'pregunta': 'La creación de la ANII y el aumento del presupuesto universitario fueron factores clave que impulsaron la investigación en psicología después de 2005.', 'respuesta': true, 'justificacion': 'Se identifica como "el componente más significativo" para el desarrollo de la investigación al "aumento del presupuesto universitario y la creación de una nueva institucionalidad como sostén para el desarrollo de la ciencia... (nos referimos a la ANII)".'},
+                    {'pregunta': 'Durante el decanato de Luis Leopold (2007-2015), la estructura académica de la Facultad de Psicología se mantuvo sin cambios significativos.', 'respuesta': false, 'justificacion': 'Al contrario, el texto señala que se produjeron "transformaciones que modificaron radicalmente la estructura", como el desarme de las "Áreas" para crear cinco grandes institutos.'},
+                    {'pregunta': 'El plan de estudios de 2013 introdujo la obligatoriedad de un trabajo final de grado.', 'respuesta': true, 'justificacion': 'Entre las novedades del nuevo plan, el texto enumera "la obligatoriedad de un trabajo final de grado como requisito para la graduación".'},
+                    {'pregunta': 'La precarización del trabajo académico, con contratos de corta duración, es una de las condiciones que afecta la producción intelectual en la región.', 'respuesta': true, 'justificacion': 'El texto menciona que las condiciones de producción "se han visto modificadas a partir de la contratación por trabajos puntuales y de corta duración".'},
+                    {'pregunta': 'Las agendas de investigación en la universidad son definidas únicamente por los investigadores.', 'respuesta': false, 'justificacion': 'El documento concluye que la agenda "es compuesta o definida en un complejo sistema... donde las preferencias del mercado y la orientación estatal de los instrumentos de financiamiento juegan un rol clave".'},
+                    {'pregunta': 'La Facultad de Psicología fundó la revista "Psicología, Conocimiento y Sociedad" a finales de la década de 1980.', 'respuesta': false, 'justificacion': 'El texto indica que la revista fue creada en el año 2010.'},
+                    {'pregunta': 'Un hito importante en la formalización de la psicología en la salud fue la firma de un convenio para un practicantado remunerado para estudiantes.', 'respuesta': true, 'justificacion': 'El documento señala como un componente clave "la firma de un convenio" entre la Facultad, ASSE y el MSP que "instituyó el practicantado... de forma remunerada".'},
+                    {'pregunta': 'Previo a 2005, la investigación en psicología en Uruguay era completamente inexistente.', 'respuesta': false, 'justificacion': 'El texto matiza que "haber las hubo pero en proporciones notoriamente menores a las actuales" y que se hacían "en condiciones excepcionales".'},
+                    {'pregunta': 'El rectorado de Rodrigo Arocena impulsó una "Segunda Reforma Universitaria" que promovió la descentralización.', 'respuesta': true, 'justificacion': 'El documento menciona que Arocena asumió en 2006 "impulsando lo que él denominó la Segunda Reforma Universitaria", y una de sus líneas de acción fue "la descentralización de la universidad".'},
+                    {'pregunta': 'La investigación psicológica en Uruguay ha logrado superar por completo los problemas de la región, como la influencia de agendas externas.', 'respuesta': false, 'justificacion': 'El documento cierra afirmando que "la investigación psicológica del país no escapa a los problemas de la región".'},
+                    {'pregunta': 'Carlos Vaz Ferreira es mencionado como uno de los pioneros que intentó introducir la psicología científica en Uruguay a finales del siglo XIX.', 'respuesta': true, 'justificacion': 'El texto pone como ejemplo de los intentos de introducción de la psicología a fines del XIX, los esfuerzos de Carlos Vaz Ferreira, quien fundó "el primer laboratorio de Psicología Experimental para fines didácticos".'},
+                    {'pregunta': 'El plan de estudios del IPUR se mantuvo vigente hasta la aprobación del nuevo plan en 2013.', 'respuesta': true, 'justificacion': 'El plan IPUR de 1988 fue sustituido por el nuevo plan de estudios aprobado en 2013.'},
+                    {'pregunta': 'El gobierno de Gabriel Terra, en 1933, creó el Ministerio de Protección a la Infancia.', 'respuesta': true, 'justificacion': 'A propuesta del Ministro de Instrucción Pública, el gobierno de Terra creó en 1933 el Ministerio de Protección a la Infancia.'}
+                ]
+            },
+            historia_doc10: {
+                title: "Historia de la Psicología - Documento 10",
+                questions: [
+                    // Preguntas de ejemplo para el Documento 10
+                    {
+                        question: "¿Cuál es un desafío actual para la psicología como profesión en Uruguay?",
+                        options: ["Falta de interés estudiantil.", "Escasa demanda laboral.", "Necesidad de mayor integración en el sistema de salud.", "Exceso de regulación profesional."],
+                        answer: "Necesidad de mayor integración en el sistema de salud.",
+                        explanation: "A pesar del crecimiento de la profesión, la integración plena de los psicólogos en el Sistema Nacional Integrado de Salud (SNIS) sigue siendo un desafío clave en Uruguay."
+                    },
+                    {
+                        question: "¿Qué papel juega la investigación en el desarrollo reciente de la psicología uruguaya?",
+                        options: ["Ha disminuido su importancia.", "Se ha vuelto irrelevante.", "Es fundamental para la academización y el avance de la disciplina.", "Se limita a estudios de caso clínicos."],
+                        answer: "Es fundamental para la academización y el avance de la disciplina.",
+                        explanation: "El período post-2005 ha visto un 'despertar académico' en la psicología uruguaya, con un fuerte énfasis en el fortalecimiento de la investigación y la producción de conocimiento."
+                    }
+                ]
+            },
+            // Otras materias (se mantienen con sus preguntas originales)
+            neurobiologia: {
+                title: "Neurobiología",
+                questions: [
+                    {
+                        question: "¿Cuál es la unidad básica funcional del sistema nervioso?",
+                        options: ["Glía", "Sinapsis", "Neurona", "Axón", "Dendrita"],
+                        answer: "Neurona",
+                        explanation: "La neurona es la célula fundamental del sistema nervioso, especializada en la recepción, procesamiento y transmisión de información mediante impulsos eléctricos y químicos."
+                    },
+                    {
+                        question: "¿Qué neurotransmisor está asociado con el placer y la recompensa, y su desregulación con la adicción?",
+                        options: ["Serotonina", "Dopamina", "Acetilcolina", "GABA", "Norepinefrina"],
+                        answer: "Dopamina",
+                        explanation: "La dopamina es un neurotransmisor crucial en el sistema de recompensa del cerebro. Niveles alterados de dopamina están implicados en condiciones como la adicción, el Parkinson y la esquizofrenia."
+                    }
+                ]
+            },
+            articulacion: {
+                title: "Articulación de Saberes",
+                questions: [
+                    {
+                        question: "¿Qué concepto refiere a la capacidad de integrar conocimientos de diversas disciplinas para abordar un problema complejo?",
+                        options: ["Especialización", "Compartimentalización", "Interdisciplinariedad", "Reduccionismo", "Fragmentación"],
+                        answer: "Interdisciplinariedad",
+                        explanation: "La interdisciplinariedad implica la colaboración y el intercambio de conocimientos entre diferentes disciplinas para enriquecer la comprensión y encontrar soluciones a problemas que trascienden las fronteras de una sola área del saber."
+                    }
+                ]
+            },
+            epistemologia: {
+                title: "Epistemología",
+                questions: [
+                    {
+                        question: "¿Qué rama de la filosofía estudia los principios, fundamentos, extensión y métodos del conocimiento científico?",
+                        options: ["Metafísica", "Estética", "Ética", "Epistemología", "Ontología"],
+                        answer: "Epistemología",
+                        explanation: "La epistemología es la rama de la filosofía que se ocupa de la naturaleza, el origen y los límites del conocimiento, especialmente en lo que respecta al conocimiento científico."
+                    }
+                ]
+            }
+        };
+
+        // Función para mostrar una pantalla y ocultar las demás
+        function showScreen(screenId) {
+            moduleSelectionScreen.style.display = 'none';
+            fundamentosModulesScreen.style.display = 'none';
+            historiaModulesScreen.style.display = 'none'; // Ocultar la nueva pantalla de Historia
+            quizScreen.style.display = 'none';
+            resultsScreen.style.display = 'none';
+            backToSelectionButton.style.display = 'none';
+            backToMainSelectionButton.style.display = 'none';
+            backToMainSelectionButtonHistoria.style.display = 'none'; // Ocultar el botón de volver de Historia
+
+            currentActiveScreen = screenId;
+
+            if (screenId === 'module-selection-screen') {
+                moduleSelectionScreen.style.display = 'block';
+            } else if (screenId === 'fundamentos-modules-screen') {
+                fundamentosModulesScreen.style.display = 'block';
+                backToMainSelectionButton.style.display = 'block';
+            } else if (screenId === 'historia-modules-screen') { // Mostrar la nueva pantalla de Historia
+                historiaModulesScreen.style.display = 'block';
+                backToMainSelectionButtonHistoria.style.display = 'block';
+            }
+            else if (screenId === 'quiz-screen') {
+                quizScreen.style.display = 'block';
+                backToSelectionButton.style.display = 'block';
+            } else if (screenId === 'results-screen') {
+                resultsScreen.style.display = 'block';
+            }
+        }
+
+        // Iniciar el quiz para un módulo dado
+        function startQuiz(module) {
+            selectedModule = module;
+            currentQuiz = [...quizzes[module].questions];
+            currentQuestionIndex = 0;
+            score = 0;
+            quizTitle.textContent = quizzes[module].title;
+            showQuestion();
+            showScreen('quiz-screen');
+        }
+
+        // Mostrar la pregunta actual
+        function showQuestion() {
+            if (currentQuestionIndex < currentQuiz.length) {
+                const questionData = currentQuiz[currentQuestionIndex];
+                questionText.textContent = questionData.question;
+                optionsContainer.innerHTML = '';
+                explanationContainer.style.display = 'none';
+                showAnswerButton.style.display = 'block';
+                nextButton.style.display = 'none';
+                selectedOption = null;
+
+                questionCounter.textContent = `Pregunta ${currentQuestionIndex + 1} de ${currentQuiz.length}`;
+
+
+                questionData.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.classList.add('option-button');
+                    button.textContent = option;
+                    button.addEventListener('click', () => selectOption(button, option, questionData.answer));
+                    optionsContainer.appendChild(button);
+                });
+                Array.from(optionsContainer.children).forEach(button => {
+                    button.disabled = false;
+                });
+            } else {
+                showResults();
+            }
+        }
+
+        // Seleccionar una opción
+        function selectOption(button, selectedAnswer, correctAnswer) {
+            if (selectedOption) return;
+
+            selectedOption = button;
+            selectedOption.classList.add('selected');
+
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+
+        // Mostrar la respuesta correcta/incorrecta
+        function showAnswer() {
+            if (!selectedOption) {
+                return;
+            }
+
+            const questionData = currentQuiz[currentQuestionIndex];
+            const correctAnswer = questionData.answer;
+            const explanation = questionData.explanation;
+
+            Array.from(optionsContainer.children).forEach(button => {
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('correct');
+                }
+                if (button === selectedOption && button.textContent !== correctAnswer) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            if (selectedOption.textContent === correctAnswer) {
+                score++;
+            }
+
+            explanationText.textContent = explanation;
+            explanationContainer.style.display = 'block';
+
+            showAnswerButton.style.display = 'none';
+            nextButton.style.display = 'block';
+        }
+
+        // Pasar a la siguiente pregunta
+        function showNextQuestion() {
+            currentQuestionIndex++;
+            showQuestion();
+        }
+
+        // Mostrar resultados finales
+        function showResults() {
+            finalScore.textContent = `Has respondido ${score} de ${currentQuiz.length} preguntas correctamente.`;
+            showScreen('results-screen');
+        }
+
+        // Función para leer texto usando la API de SpeechSynthesis
+        function readText(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-ES';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.log('Tu navegador no soporta la API de Text-to-Speech.');
+            }
+        }
+
+        // Event Listeners para la selección de módulos principales
+        document.querySelectorAll('#module-selection-screen .module-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const selected = button.getAttribute('data-module');
+                if (selected === 'fundamentos_main') {
+                    showScreen('fundamentos-modules-screen');
+                } else if (selected === 'historia_main') { // Nuevo caso para Historia
+                    showScreen('historia-modules-screen');
+                }
+                else {
+                    startQuiz(selected);
+                }
+            });
+        });
+
+        // Event Listeners para la selección de sub-módulos de Fundamentos
+        document.querySelectorAll('#fundamentos-modules-screen .module-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const selected = button.getAttribute('data-module');
+                startQuiz(selected);
+            });
+        });
+
+        // Event Listeners para la selección de documentos de Historia
+        document.querySelectorAll('#historia-modules-screen .module-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const selected = button.getAttribute('data-module');
+                startQuiz(selected);
+            });
+        });
+
+        showAnswerButton.addEventListener('click', showAnswer);
+        nextButton.addEventListener('click', showNextQuestion);
+
+        // Botón "Estudiar Mismo Módulo" en resultados
+        restartQuizButton.addEventListener('click', () => {
+            if (selectedModule) {
+                startQuiz(selectedModule);
+            } else {
+                showScreen('module-selection-screen');
+            }
+        });
+
+        // Botón "Elegir Otro Módulo" en resultados
+        restartAllButton.addEventListener('click', () => {
+            showScreen('module-selection-screen');
+        });
+
+        // Botón "Elegir Módulo" (flecha atrás en el quiz)
+        backToSelectionButton.addEventListener('click', () => {
+            if (selectedModule && selectedModule.startsWith('fundamentos_modulo')) {
+                showScreen('fundamentos-modules-screen');
+            } else if (selectedModule && selectedModule.startsWith('historia_doc')) { // Volver de un doc de Historia
+                showScreen('historia-modules-screen');
+            }
+            else {
+                showScreen('module-selection-screen');
+            }
+        });
+
+        // Botón "Volver a Materias" en la pantalla de módulos de Fundamentos
+        backToMainSelectionButton.addEventListener('click', () => {
+            showScreen('module-selection-screen');
+        });
+
+        // Botón "Volver a Materias" en la pantalla de documentos de Historia
+        backToMainSelectionButtonHistoria.addEventListener('click', () => {
+            showScreen('module-selection-screen');
+        });
+
+
+        readButton.addEventListener('click', () => {
+            const currentQuestion = currentQuiz[currentQuestionIndex];
+            if (currentQuestion) {
+                let textToRead = `Pregunta: ${currentQuestion.question}. Opciones: `;
+                currentQuestion.options.forEach((option, index) => {
+                    textToRead += `${String.fromCharCode(65 + index)}. ${option}. `;
+                });
+                if (explanationContainer.style.display === 'block') {
+                    textToRead += `Justificación: ${currentQuestion.explanation}`;
+                }
+                readText(textToRead);
+            }
+        });
+
+
+        // Mostrar la pantalla de selección principal al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            showScreen('module-selection-screen');
+        });
+    </script>
+</body>
+</html>
